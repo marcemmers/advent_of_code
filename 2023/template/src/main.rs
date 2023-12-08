@@ -4,19 +4,19 @@ use std::fs;
 const EXAMPLE_FILENAME: &'static str = "./src/example.txt";
 const PUZZLE_FILENAME: &'static str = "./src/puzzle.txt";
 
-fn get_input_lines(filename: &str) -> Lines {
+fn solve1(filename: &str) {
     println!("Solving for file: {filename}");
     let input = fs::read_to_string(filename).expect("Should have been read");
 
-    return input.lines();
+    let lines = input.lines();
 }
 
-fn solve1(filename: &str) {
-    let lines = get_input_lines(filename);
-}
 
 fn solve2(filename: &str) {
-    let lines = get_input_lines(filename);
+    println!("Solving for file: {filename}");
+    let input = fs::read_to_string(filename).expect("Should have been read");
+
+    let lines = input.lines();
 }
 
 
