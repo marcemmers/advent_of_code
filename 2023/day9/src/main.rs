@@ -78,13 +78,11 @@ mod tests {
 
     #[test]
     fn test1() {
-        let result = solve1(EXAMPLE_FILENAME);
-        assert_eq!(result, 114);
+        assert_eq!(solve1(EXAMPLE_FILENAME), 114);
     }
 
     #[test]
     fn test2() {
-        let result = solve2(EXAMPLE_FILENAME);
-        assert_eq!(result, 2);
+        assert_eq!(solve2(EXAMPLE_FILENAME), 2);
     }
 }
