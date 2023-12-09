@@ -1,9 +1,6 @@
 use std::time::Instant;
 use std::{fs, str::Lines};
 
-const EXAMPLE_FILENAME: &'static str = "./src/example.txt";
-const PUZZLE_FILENAME: &'static str = "./src/puzzle.txt";
-
 #[derive(Eq, PartialEq, Hash, Clone)]
 struct MapItem {
     src: u32,
@@ -11,7 +8,7 @@ struct MapItem {
     size: u32,
 }
 
-#[derive(Eq, PartialEq, Hash, Clone, Copy)]
+#[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
 struct Seed {
     start: u32,
     size: u32,
@@ -88,7 +85,7 @@ fn get_seeds(line: &str) -> Vec<u32> {
         .collect()
 }
 
-fn solve1(filename: &str) {
+fn solve1(filename: &str) -> u32 {
     println!("Solving for file: {filename}");
     let input = fs::read_to_string(filename).expect("Should have been read");
 
@@ -103,30 +100,26 @@ fn solve1(filename: &str) {
 
     let results = seeds.iter().map(|seed| find_location(&transforms, *seed));
 
-    let min = results.min().unwrap();
-    println!("Result: {min}");
+    return results.min().unwrap();
 }
 
-fn solve2(filename: &str) {
+fn solve2(filename: &str) -> u32 {
     println!("Solving for file: {filename}");
     let input = fs::read_to_string(filename).expect("Should have been read");
 
     let mut lines = input.lines();
 
     let seeds_raw = get_seeds(lines.next().unwrap());
-    let mut seeds: Vec<Seed> = Vec::new();
-    let mut seeds_iter = seeds_raw.iter();
-    loop {
-        if let (Some(start), Some(size)) = (seeds_iter.next(), seeds_iter.next()) {
-            println!("Found {start} with size {size}");
-            seeds.push(Seed {
-                start: *start,
-                size: *size,
-            });
-        } else {
-            break;
-        }
-    }
+    let seeds: Vec<Seed> = seeds_raw
+        .as_slice()
+        .windows(2)
+        .step_by(2)
+        .map(|val| Seed {
+            start: val[0],
+            size: val[1],
+        })
+        .collect();
+    println!("Seeds: {:?}", seeds);
 
     let transforms = generate_transformation(lines);
 
@@ -141,20 +134,34 @@ fn solve2(filename: &str) {
         println!("Found new min: {min}");
     }
 
-    println!("Result: {}", min);
+    return min;
 }
+
+const PUZZLE_FILENAME: &'static str = "./src/puzzle.txt";
 
 fn main() {
     let start = Instant::now();
-
-    solve1(EXAMPLE_FILENAME);
-    solve1(PUZZLE_FILENAME);
-
+    println!("Result of 1: {}", solve1(PUZZLE_FILENAME));
     println!("Solved 1 in {:?}\n\n", start.elapsed());
+
     let start = Instant::now();
-
-    solve2(EXAMPLE_FILENAME);
-    solve2(PUZZLE_FILENAME);
-
+    println!("Result of 2: {}", solve2(PUZZLE_FILENAME));
     println!("Solved 2 in {:?}", start.elapsed());
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const EXAMPLE_FILENAME: &'static str = "./src/example.txt";
+
+    #[test]
+    fn test1() {
+        assert_eq!(solve1(EXAMPLE_FILENAME), 35);
+    }
+
+    #[test]
+    fn test2() {
+        assert_eq!(solve2(EXAMPLE_FILENAME), 46);
+    }
 }
