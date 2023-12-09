@@ -3,8 +3,6 @@ use std::fs;
 use std::str::{Chars, Lines};
 use std::time::Instant;
 
-const EXAMPLE_FILENAME: &'static str = "./src/example.txt";
-const EXAMPLE2_FILENAME: &'static str = "./src/example2.txt";
 const PUZZLE_FILENAME: &'static str = "./src/puzzle.txt";
 
 fn calculate_steps(
@@ -65,7 +63,7 @@ fn generate_map(lines: Lines) -> HashMap<String, (String, String)> {
         .collect()
 }
 
-fn solve1(filename: &str) {
+fn solve1(filename: &str) -> u64 {
     println!("Solving for file: {filename}");
     let input = fs::read_to_string(filename).expect("Should have been read");
 
@@ -79,9 +77,10 @@ fn solve1(filename: &str) {
 
     // println!("Map: {:?}", map);
     println!("Steps: {steps}");
+    return steps as u64;
 }
 
-fn solve2(filename: &str) {
+fn solve2(filename: &str) -> u64 {
     println!("Solving for file: {filename}");
     let input = fs::read_to_string(filename).expect("Should have been read");
 
@@ -105,19 +104,35 @@ fn solve2(filename: &str) {
 
     // println!("Map: {:?}", map);
     println!("Steps: {steps}");
+    return steps as u64;
 }
 
 fn main() {
     let start = Instant::now();
-
-    solve1(EXAMPLE_FILENAME);
     solve1(PUZZLE_FILENAME);
-
     println!("Solved 1 in {:?}\n\n", start.elapsed());
+
     let start = Instant::now();
-
-    solve2(EXAMPLE2_FILENAME);
     solve2(PUZZLE_FILENAME);
-
     println!("Solved 2 in {:?}", start.elapsed());
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const EXAMPLE_FILENAME: &'static str = "./src/example.txt";
+    const EXAMPLE2_FILENAME: &'static str = "./src/example2.txt";
+
+    #[test]
+    fn test1() {
+        let result = solve1(EXAMPLE_FILENAME);
+        assert_eq!(result, 6);
+    }
+
+    #[test]
+    fn test2() {
+        let result = solve2(EXAMPLE2_FILENAME);
+        assert_eq!(result, 6);
+    }
 }
