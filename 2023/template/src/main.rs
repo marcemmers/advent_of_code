@@ -25,11 +25,11 @@ const PUZZLE_FILENAME: &'static str = "./src/puzzle.txt";
 
 fn main() {
     let start = Instant::now();
-    solve1(PUZZLE_FILENAME);
+    println!("Result of 1: {}", solve1(PUZZLE_FILENAME));
     println!("Solved 1 in {:?}\n\n", start.elapsed());
 
     let start = Instant::now();
-    solve2(PUZZLE_FILENAME);
+    println!("Result of 2: {}", solve2(PUZZLE_FILENAME));
     println!("Solved 2 in {:?}", start.elapsed());
 }
 
