@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::fs;
 use std::time::Instant;
 
@@ -15,7 +14,7 @@ struct Operation<'a> {
     action: Action,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Lens<'a> {
     label: &'a str,
     strength: u8,
@@ -59,45 +58,37 @@ fn solve2(filename: &str) -> u64 {
 
     let items = input.split(',');
 
-    let map =
+    let results =
         items
             .map(|item| generate_op(item))
-            .fold(HashMap::<u8, Vec<Lens>>::new(), |mut acc, op| {
-                if !acc.contains_key(&op.box_id) {
-                    acc.insert(op.box_id, Vec::new());
-                }
-                acc.entry(op.box_id).and_modify(|entry| {
-                    if let Action::Add(strength) = op.action {
-                        if let Some(pos) = entry.iter().position(|x| x.label == op.label) {
-                            // println!("Change box {} label {}: {}->{}", op.box_id, op.label, strength, entry[pos].strength);
-                            entry[pos].strength = strength;
-                        } else {
-                            // println!("Add box {} label {}: {}", op.box_id, op.label, strength);
-                            entry.push(Lens {
-                                label: op.label,
-                                strength,
-                            });
-                        }
+            .fold(vec![Vec::<Lens>::new(); 256], |mut acc, op| {
+                let entry = &mut acc[op.box_id as usize];
+                if let Action::Add(strength) = op.action {
+                    if let Some(pos) = entry.iter().position(|x| x.label == op.label) {
+                        // println!("Change box {} label {}: {}->{}", op.box_id, op.label, strength, entry[pos].strength);
+                        entry[pos].strength = strength;
                     } else {
-                        if let Some(pos) = entry.iter().position(|x| x.label == op.label) {
-                            // println!("Remove box {} label {}: {}", op.box_id, op.label, entry[pos].strength);
-                            entry.remove(pos);
-                        }
+                        // println!("Add box {} label {}: {}", op.box_id, op.label, strength);
+                        entry.push(Lens {
+                            label: op.label,
+                            strength,
+                        });
                     }
-                });
+                } else {
+                    if let Some(pos) = entry.iter().position(|x| x.label == op.label) {
+                        // println!("Remove box {} label {}: {}", op.box_id, op.label, entry[pos].strength);
+                        entry.remove(pos);
+                    }
+                }
                 acc
             });
 
     // println!("Map: {:?}", map);
 
-    return (0..=255u8).fold(0, |acc, i| {
-        if let Some(lenses) = map.get(&i) {
-            return acc
-                + lenses.iter().enumerate().fold(0, |acc, (idx, lens)| {
-                    acc + ((i as u64 + 1) * (idx as u64 + 1) * lens.strength as u64)
-                });
-        }
-        acc
+    return results.iter().enumerate().fold(0, |acc, (box_idx, item)| {
+        acc + item.iter().enumerate().fold(0, |acc, (lens_idx, lens)| {
+            acc + ((box_idx as u64 + 1) * (lens_idx as u64 + 1) * lens.strength as u64)
+        })
     });
 }
 
