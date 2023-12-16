@@ -49,6 +49,15 @@ fn move_to_front(line: &str) -> String {
     return result;
 }
 
+fn calculate_load(input: &Vec<String>) -> u64 {
+    input.iter().fold(0, |acc, line| {
+        acc + line.chars().rev().enumerate().fold(
+            0,
+            |acc, (idx, ch)| if ch == 'O' { acc + idx + 1 } else { acc },
+        )
+    }) as u64
+}
+
 #[allow(unused)]
 fn print_grid(input: &Vec<String>) {
     println!("Grid:");
@@ -72,12 +81,7 @@ fn solve1(filename: &str) -> u64 {
     // print_grid(&lines);
     // print_grid(&moved_lines);
 
-    return moved_lines.iter().fold(0, |acc, line| {
-        acc + line.chars().rev().enumerate().fold(
-            0,
-            |acc, (idx, ch)| if ch == 'O' { acc + idx + 1 } else { acc },
-        )
-    }) as u64;
+    return calculate_load(&moved_lines);
 }
 
 fn move_all(input: &Vec<String>) -> Vec<String> {
@@ -134,12 +138,7 @@ fn solve2(filename: &str) -> u64 {
 
     let final_state = (0..remainder).fold(found_state, |state, _| perform_full_rotation(&state));
 
-    return final_state.iter().fold(0, |acc, line| {
-        acc + line.chars().rev().enumerate().fold(
-            0,
-            |acc, (idx, ch)| if ch == 'O' { acc + idx + 1 } else { acc },
-        )
-    }) as u64;
+    return calculate_load(&final_state);
 }
 
 const PUZZLE_FILENAME: &'static str = "./src/puzzle.txt";
