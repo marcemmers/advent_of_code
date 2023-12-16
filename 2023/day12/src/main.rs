@@ -1,25 +1,80 @@
 use std::fs;
 use std::time::Instant;
 
-fn equal_lengths(map: &str, numbers: &[u32]) -> bool {
-    let map = map
-        .split('.')
-        .filter_map(|x| if x.is_empty() { None } else { Some(x.len()) });
-
-    map.clone().count() == numbers.len() && map.zip(numbers).all(|(a, b)| a as u32 == *b)
+struct SpringMap {
+    spring: u128,
+    potential: u128
 }
 
-fn try_arrangements(map: &str, numbers: &[u32], questions_left: usize) -> u64 {
+impl SpringMap {
+    fn new() -> SpringMap {
+        SpringMap{ spring: 0, potential: 0 }
+    }
+
+    fn parse(input: &str) -> SpringMap {
+        input.chars().fold(SpringMap::new(), |mut map, ch| {
+            map.shift_left(1);
+            match ch {
+                '#' => map.spring = map.spring.saturating_add(1),
+                '?' => map.potential = map.potential.saturating_add(1),
+                _ => ()
+            }
+            return map;
+        })
+    }
+
+    fn shift_left(&mut self, shift: u32) {
+        self.spring <<= shift;
+        self.potential <<= shift;
+    }
+
+    fn next_spring(&self) -> SpringMap {
+        let bit = 1u128 << (u128::BITS - self.potential.leading_zeros() - 1);
+        SpringMap{
+            spring: self.spring | bit,
+            potential: self.potential & !bit,
+        }
+    }
+
+    fn next_empty(&self) -> SpringMap {
+        let bit = 1u128 << (u128::BITS - self.potential.leading_zeros() - 1);
+        SpringMap{
+            spring: self.spring,
+            potential: self.potential & !bit,
+        }
+    }
+}
+
+fn equal_lengths(map: SpringMap, numbers: &[u32]) -> bool {
+    let mut springs = map.spring;
+
+    let result = numbers.iter().rev().all(|nr| {
+        springs = springs.wrapping_shr(springs.trailing_zeros());
+        if *nr != springs.trailing_ones() {
+            return false;
+        }
+        springs = springs.wrapping_shr(*nr);
+        return true;
+    });
+
+    if springs.count_ones() != 0 {
+        return false;
+    }
+
+    return result;
+}
+
+fn try_arrangements(map: SpringMap, numbers: &[u32], questions_left: usize) -> u64 {
     if questions_left == 0 {
         return if equal_lengths(map, numbers) { 1 } else { 0 };
     }
 
     return try_arrangements(
-        map.replacen("?", ".", 1).as_str(),
+        map.next_empty(),
         &numbers,
         questions_left - 1,
     ) + try_arrangements(
-        map.replacen("?", "#", 1).as_str(),
+        map.next_spring(),
         &numbers,
         questions_left - 1,
     );
@@ -33,10 +88,17 @@ fn calculate_arrangements(line: &str) -> u64 {
         .filter_map(|x| x.parse::<u32>().ok())
         .collect();
 
+    let map = SpringMap::parse(map);
+
+    // println!("Springs    {:>#30b}", map.spring);
+    // println!("Potential: {:>#30b}", map.potential);
+
+    let potentials = map.potential.count_ones() as usize;
+
     return try_arrangements(
         map,
         numbers.as_slice(),
-        map.chars().filter(|x| *x == '?').count(),
+        potentials
     );
 }
 
