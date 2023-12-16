@@ -48,7 +48,7 @@ impl SpringMap {
 fn equal_lengths(map: SpringMap, numbers: &[u32]) -> bool {
     let mut springs = map.spring;
 
-    let result = numbers.iter().rev().all(|nr| {
+    let result = numbers.iter().all(|nr| {
         springs = springs.wrapping_shr(springs.trailing_zeros());
         if *nr != springs.trailing_ones() {
             return false;
@@ -64,28 +64,29 @@ fn equal_lengths(map: SpringMap, numbers: &[u32]) -> bool {
     return result;
 }
 
-fn try_arrangements(map: SpringMap, numbers: &[u32], questions_left: usize) -> u64 {
-    if questions_left == 0 {
+fn try_arrangements(map: SpringMap, numbers: &[u32]) -> u64 {
+    if map.potential.count_ones() == 0 {
         return if equal_lengths(map, numbers) { 1 } else { 0 };
     }
 
     return try_arrangements(
         map.next_empty(),
-        &numbers,
-        questions_left - 1,
+        &numbers
     ) + try_arrangements(
         map.next_spring(),
-        &numbers,
-        questions_left - 1,
+        &numbers
     );
 }
 
 fn calculate_arrangements(line: &str) -> u64 {
     let (map, numbers) = line.split_once(' ').unwrap();
 
+    // Reversed the numbers so we search from lsb
+
     let numbers: Vec<u32> = numbers
         .split(',')
         .filter_map(|x| x.parse::<u32>().ok())
+        .rev()
         .collect();
 
     let map = SpringMap::parse(map);
@@ -93,12 +94,9 @@ fn calculate_arrangements(line: &str) -> u64 {
     // println!("Springs    {:>#30b}", map.spring);
     // println!("Potential: {:>#30b}", map.potential);
 
-    let potentials = map.potential.count_ones() as usize;
-
     return try_arrangements(
         map,
-        numbers.as_slice(),
-        potentials
+        numbers.as_slice()
     );
 }
 
