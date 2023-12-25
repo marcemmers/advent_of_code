@@ -17,8 +17,10 @@
         "2023/day15/Cargo.toml",
         "2023/day16/Cargo.toml",
         "2023/day17/Cargo.toml",
+        "2023/day18/Cargo.toml",
         "2023/day20/Cargo.toml",
         "2023/day21/Cargo.toml",
         "2023/day24/Cargo.toml",
+        "2023/day25/Cargo.toml",
     ]
 }
