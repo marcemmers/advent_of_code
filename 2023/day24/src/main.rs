@@ -74,6 +74,26 @@ impl Hailstone {
         return Some(Coord{x: x as i128, y: y as i128, z: 0});
     }
 
+    fn to_linear_equation_xy(&self, other: &Self) -> Vec<f64> {
+        vec![
+            self.velocity.y - other.velocity.y,
+            other.position.y - self.position.y,
+            other.velocity.x - self.velocity.x,
+            self.position.x - other.position.x,
+            other.position.y * other.velocity.x - other.position.x * other.velocity.y + self.position.x * self.velocity.y - self.position.y * self.velocity.x
+        ].iter().map(|x| *x as f64).collect()
+    }
+
+    fn to_linear_equation_xz(&self, other: &Self) -> Vec<f64> {
+        vec![
+            self.velocity.z - other.velocity.z,
+            other.position.z - self.position.z,
+            other.velocity.x - self.velocity.x,
+            self.position.x - other.position.x,
+            other.position.z * other.velocity.x - other.position.x * other.velocity.z + self.position.x * self.velocity.z - self.position.z * self.velocity.x
+        ].iter().map(|x| *x as f64).collect()
+    }
+
 }
 
 
@@ -83,11 +103,9 @@ fn solve1(filename: &str, min: i128, max: i128) -> u64 {
 
     let hailstones: Vec<Hailstone> = input.lines().map(|line| Hailstone::new_from_line(line)).collect();
 
-    println!("Hailstones: {:?}", hailstones);
+    // println!("Hailstones: {:?}", hailstones);
 
     let mut it = hailstones.iter();
-
-     // Start one from the start so we don't combine with ourselves.
 
     let mut sum = 0;
 
@@ -106,13 +124,92 @@ fn solve1(filename: &str, min: i128, max: i128) -> u64 {
 }
 
 
-fn solve2(filename: &str) -> u64 {
+fn gaussian_elimination(matrix: &mut [Vec<f64>]) -> Vec<f64> {
+    assert_ne!(matrix.len(), 0);
+    assert_ne!(matrix[0].len(), 0);
+    let m = matrix.len();
+    let n = matrix[0].len();
+    assert_eq!(m, n-1);
+
+    let mut h = 0;
+    let mut k = 0;
+
+    // println!("Input: {:?}", matrix);
+
+    while h < m && k < n {
+        let i_max = (h..m).map(|i| (i, matrix[i][k].abs())).max_by(|(_, a), (_, b)| a.total_cmp(b)).map(|(i, _)| i).unwrap();
+
+        if matrix[i_max][k] == 0f64 {
+            k += 1;
+        } else {
+            let copy = matrix[i_max].clone();
+            matrix[i_max] = matrix[h].clone();
+            matrix[h] = copy;
+
+            for i in (h+1)..m {
+                let f = matrix[i][k] / matrix[h][k];
+                matrix[i][k] = 0f64;
+                for j in (k+1)..n {
+                    matrix[i][j] -= matrix[h][j] * f;
+                }
+            }
+            h += 1;
+            k += 1;
+        }
+    }
+
+    for i in (1..m).rev() {
+        if matrix[i][i] != 0f64 {
+            for j in (0..i).rev() {
+                let f = matrix[j][i] / matrix[i][i];
+                for k in (0..n).rev() {
+                    matrix[j][k] -= f * matrix[i][k];
+                }
+            }
+        }
+    }
+
+    // println!("Result: {:?}", matrix);
+
+    let result = (0..m).map(|i| matrix[i][m] / matrix[i][i]).collect();
+
+    // println!("Result: {:?}", result);
+
+    return result;
+}
+
+
+fn solve2(filename: &str) -> i128 {
     println!("Solving for file: {filename}");
     let input = fs::read_to_string(filename).expect("Should have been read");
 
-    let lines = input.lines();
+    let hailstones: Vec<Hailstone> = input.lines().map(|line| Hailstone::new_from_line(line)).collect();
 
-    return 0;
+    let mut input = [
+        hailstones[0].to_linear_equation_xy(&hailstones[1]),
+        hailstones[0].to_linear_equation_xy(&hailstones[2]),
+        hailstones[0].to_linear_equation_xy(&hailstones[3]),
+        hailstones[0].to_linear_equation_xy(&hailstones[4])
+    ];
+
+    let result_xy = gaussian_elimination(&mut input);
+
+    let mut input2 = [
+        hailstones[0].to_linear_equation_xz(&hailstones[1]),
+        hailstones[0].to_linear_equation_xz(&hailstones[2]),
+        hailstones[0].to_linear_equation_xz(&hailstones[3]),
+        hailstones[0].to_linear_equation_xz(&hailstones[4])
+    ];
+
+    let result_xz = gaussian_elimination(&mut input2);
+
+    let x = result_xy[0].round() as i128;
+    let y = result_xy[2].round() as i128;
+    let z = result_xz[2].round() as i128;
+
+    println!("Result: x={x}, y={y}, z={z}");
+
+    return x + y + z;
 }
 
 
@@ -142,6 +239,17 @@ mod tests {
 
     #[test]
     fn test2() {
-        assert_eq!(solve2(EXAMPLE_FILENAME), 0);
+        assert_eq!(solve2(EXAMPLE_FILENAME), 47);
+    }
+
+    #[test]
+    fn test_gauss() {
+        let mut matrix = [vec![2f64, 1f64, -1f64, 8f64],
+        vec![-3f64, -1f64, 2f64, -11f64],
+        vec![-2f64, 1f64, 2f64, -3f64]];
+        let result = vec![
+            2f64, 3f64, -1f64,
+        ];
+        assert_eq!(gaussian_elimination(&mut matrix).iter().map(|x| x.round()).collect::<Vec<f64>>(), result);
     }
 }
