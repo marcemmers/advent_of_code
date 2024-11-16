@@ -1,26 +1,3 @@
 {
-    "rust-analyzer.linkedProjects": [
-        "2023/day1/Cargo.toml",
-        "2023/day2/Cargo.toml",
-        "2023/day3/Cargo.toml",
-        "2023/day4/Cargo.toml",
-        "2023/day5/Cargo.toml",
-        "2023/day6/Cargo.toml",
-        "2023/day7/Cargo.toml",
-        "2023/day8/Cargo.toml",
-        "2023/day9/Cargo.toml",
-        "2023/day10/Cargo.toml",
-        "2023/day11/Cargo.toml",
-        "2023/day12/Cargo.toml",
-        "2023/day13/Cargo.toml",
-        "2023/day14/Cargo.toml",
-        "2023/day15/Cargo.toml",
-        "2023/day16/Cargo.toml",
-        "2023/day17/Cargo.toml",
-        "2023/day18/Cargo.toml",
-        "2023/day20/Cargo.toml",
-        "2023/day21/Cargo.toml",
-        "2023/day24/Cargo.toml",
-        "2023/day25/Cargo.toml",
-    ]
+    "rust-analyzer.check.command": "clippy",
 }
