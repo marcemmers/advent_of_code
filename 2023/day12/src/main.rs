@@ -1,97 +1,124 @@
+use std::collections::hash_map::Entry::Occupied;
+use std::collections::HashMap;
 use std::fs;
 use std::time::Instant;
 
-struct SpringMap {
-    spring: u128,
-    potential: u128,
+#[derive(Clone, Copy, Hash, Debug, PartialEq, Eq)]
+enum Record {
+    Empty,
+    Unknown,
+    Spring,
 }
 
-impl SpringMap {
-    fn new() -> SpringMap {
-        SpringMap {
-            spring: 0,
-            potential: 0,
-        }
-    }
-
-    fn parse(input: &str) -> SpringMap {
-        input.chars().fold(SpringMap::new(), |mut map, ch| {
-            map.shift_left(1);
+fn parse_record(line: &str) -> Vec<Record> {
+    line.trim()
+        // .trim_matches('.')
+        .chars()
+        .fold(Vec::new(), |mut vec: Vec<Record>, ch| {
             match ch {
-                '#' => map.spring = map.spring.saturating_add(1),
-                '?' => map.potential = map.potential.saturating_add(1),
-                _ => (),
+                '?' => vec.push(Record::Unknown),
+                '#' => vec.push(Record::Spring),
+                _ => {
+                    if let Some(record) = vec.last() {
+                        if record != &Record::Empty {
+                            vec.push(Record::Empty);
+                        }
+                    } else {
+                        vec.push(Record::Empty);
+                    }
+                }
             }
-            map
+            vec
         })
-    }
-
-    fn shift_left(&mut self, shift: u32) {
-        self.spring <<= shift;
-        self.potential <<= shift;
-    }
-
-    fn next_spring(&self) -> SpringMap {
-        let bit = 1u128 << (u128::BITS - self.potential.leading_zeros() - 1);
-        SpringMap {
-            spring: self.spring | bit,
-            potential: self.potential & !bit,
-        }
-    }
-
-    fn next_empty(&self) -> SpringMap {
-        let bit = 1u128 << (u128::BITS - self.potential.leading_zeros() - 1);
-        SpringMap {
-            spring: self.spring,
-            potential: self.potential & !bit,
-        }
-    }
 }
 
-fn equal_lengths(map: SpringMap, numbers: &[u32]) -> bool {
-    let mut springs = map.spring;
-
-    let result = numbers.iter().all(|nr| {
-        springs = springs.wrapping_shr(springs.trailing_zeros());
-        if *nr != springs.trailing_ones() {
-            return false;
-        }
-        springs = springs.wrapping_shr(*nr);
-        true
-    });
-
-    if springs.count_ones() != 0 {
-        return false;
-    }
-
-    result
-}
-
-fn try_arrangements(map: SpringMap, numbers: &[u32]) -> u64 {
-    if map.potential.count_ones() == 0 {
-        return if equal_lengths(map, numbers) { 1 } else { 0 };
-    }
-
-    try_arrangements(map.next_empty(), numbers) + try_arrangements(map.next_spring(), numbers)
-}
-
-fn calculate_arrangements(line: &str) -> u64 {
-    let (map, numbers) = line.split_once(' ').unwrap();
-
-    // Reversed the numbers so we search from lsb
-
-    let numbers: Vec<u32> = numbers
+fn parse_sizes(sizes: &str) -> Vec<usize> {
+    sizes
         .split(',')
-        .filter_map(|x| x.parse::<u32>().ok())
-        .rev()
-        .collect();
+        .map(|val| {
+            val.parse::<usize>()
+                .expect("Should be able to parse into usize")
+        })
+        .collect()
+}
 
-    let map = SpringMap::parse(map);
+fn parse_line(line: &str) -> (Vec<Record>, Vec<usize>) {
+    let (record, sizes) = line
+        .split_once(' ')
+        .expect("Line should have a space in it");
+    (parse_record(record), parse_sizes(sizes))
+}
 
-    // println!("Springs    {:>#30b}", map.spring);
-    // println!("Potential: {:>#30b}", map.potential);
+#[derive(Clone, Hash, PartialEq, Eq)]
+struct State {
+    records: Vec<Record>,
+    sizes: Vec<usize>,
+    active: Option<usize>,
+}
 
-    try_arrangements(map, numbers.as_slice())
+fn calculate_arrangements(
+    records: &[Record],
+    sizes: &[usize],
+    active: Option<usize>,
+    memo: &mut HashMap<State, u64>,
+) -> u64 {
+    let state = State {
+        records: records.to_vec(),
+        sizes: sizes.to_vec(),
+        active,
+    };
+    if let Occupied(items) = memo.entry(state.clone()) {
+        return *items.get();
+    }
+
+    if (active.is_none() || active == Some(0)) && sizes.is_empty() {
+        if records.iter().any(|record| record == &Record::Spring) {
+            return 0;
+        }
+        return 1;
+    }
+    if records.is_empty() {
+        return 0;
+    }
+
+    let (record, records) = records.split_first().unwrap();
+
+    let value = if let Some(remainder) = active {
+        if remainder == 0 {
+            match record {
+                Record::Spring => 0,
+                _ => calculate_arrangements(records, sizes, None, memo),
+            }
+        } else {
+            match record {
+                Record::Empty => 0,
+                _ => calculate_arrangements(records, sizes, Some(remainder - 1), memo),
+            }
+        }
+    } else {
+        match record {
+            Record::Empty => calculate_arrangements(records, sizes, None, memo),
+            Record::Spring => {
+                calculate_arrangements(records, &sizes[1..], Some(sizes[0] - 1), memo)
+            }
+            Record::Unknown => {
+                calculate_arrangements(records, sizes, None, memo)
+                    + calculate_arrangements(records, &sizes[1..], Some(sizes[0] - 1), memo)
+            }
+        }
+    };
+    memo.insert(state, value);
+
+    value
+}
+
+fn unfold(records: &[Record], sizes: &[usize]) -> (Vec<Record>, Vec<usize>) {
+    let records = [records; 5];
+
+    (
+        records.join(&Record::Unknown),
+        std::iter::repeat_n(sizes, 5).flatten().copied().collect(),
+    )
 }
 
 fn solve1(filename: &str) -> u64 {
@@ -100,7 +127,11 @@ fn solve1(filename: &str) -> u64 {
 
     let lines = input.lines();
 
-    lines.map(calculate_arrangements).sum()
+    let mut memo = HashMap::new();
+    lines
+        .map(parse_line)
+        .map(|(records, sizes)| calculate_arrangements(&records, &sizes, None, &mut memo))
+        .sum()
 }
 
 fn solve2(filename: &str) -> u64 {
@@ -109,7 +140,15 @@ fn solve2(filename: &str) -> u64 {
 
     let lines = input.lines();
 
-    0
+    let mut memo = HashMap::new();
+    lines
+        .map(parse_line)
+        .map(|(records, sizes)| {
+            let (records, sizes) = unfold(&records, &sizes);
+
+            calculate_arrangements(&records, &sizes, None, &mut memo)
+        })
+        .sum()
 }
 
 const PUZZLE_FILENAME: &str = "./src/puzzle.txt";
@@ -128,6 +167,49 @@ fn main() {
 mod tests {
     use super::*;
 
+    #[test]
+    fn test_parse_record_multiple_empty() {
+        assert_eq!(
+            parse_record("?..?"),
+            vec![Record::Unknown, Record::Empty, Record::Unknown]
+        );
+    }
+
+    #[test]
+    fn test_calculate_arrangements() {
+        assert_eq!(
+            calculate_arrangements(&[Record::Unknown; 3], &[1], None, &mut HashMap::new()),
+            3
+        );
+    }
+
+    #[test]
+    fn test_calculate_arrangements2() {
+        assert_eq!(
+            calculate_arrangements(&[Record::Unknown; 3], &[1, 1], None, &mut HashMap::new()),
+            1
+        );
+    }
+
+    #[test]
+    fn test_first_string() {
+        let (records, sizes) = parse_line("?????????#?#.#?.?.# 4,3,1,1,1");
+        assert_eq!(
+            calculate_arrangements(&records, &sizes, None, &mut HashMap::new()),
+            5
+        );
+    }
+
+    #[test]
+    fn test_first_string_2nd() {
+        let (records, sizes) = parse_line("?###???????? 3,2,1");
+        let (records, sizes) = unfold(&records, &sizes);
+        assert_eq!(
+            calculate_arrangements(&records, &sizes, None, &mut HashMap::new()),
+            506250
+        );
+    }
+
     const EXAMPLE_FILENAME: &str = "./src/example.txt";
 
     #[test]
@@ -137,6 +219,6 @@ mod tests {
 
     #[test]
     fn test2() {
-        assert_eq!(solve2(EXAMPLE_FILENAME), 0);
+        assert_eq!(solve2(EXAMPLE_FILENAME), 525152);
     }
 }
