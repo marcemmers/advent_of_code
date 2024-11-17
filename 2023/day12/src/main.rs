@@ -196,7 +196,7 @@ mod tests {
         let (records, sizes) = parse_line("?????????#?#.#?.?.# 4,3,1,1,1");
         assert_eq!(
             calculate_arrangements(&records, &sizes, None, &mut HashMap::new()),
-            5
+            8
         );
     }
 
