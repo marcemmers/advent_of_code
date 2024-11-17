@@ -30,17 +30,17 @@ fn generate_op(input: &str) -> Operation {
     if input.contains('-') {
         let label = input.strip_suffix('-').unwrap();
         return Operation {
-            box_id: hash_string(&label),
+            box_id: hash_string(label),
             label,
             action: Action::Remove,
         };
     }
     let (label, strength) = input.split_once('=').unwrap();
-    return Operation {
-        box_id: hash_string(&label),
+    Operation {
+        box_id: hash_string(label),
         label,
         action: Action::Add(strength.parse::<u8>().unwrap()),
-    };
+    }
 }
 
 fn solve1(filename: &str) -> u64 {
@@ -49,7 +49,7 @@ fn solve1(filename: &str) -> u64 {
 
     let items = input.split(',');
 
-    return items.map(|item| hash_string(item) as u64).sum();
+    items.map(|item| hash_string(item) as u64).sum()
 }
 
 fn solve2(filename: &str) -> u64 {
@@ -74,25 +74,23 @@ fn solve2(filename: &str) -> u64 {
                             strength,
                         });
                     }
-                } else {
-                    if let Some(pos) = entry.iter().position(|x| x.label == op.label) {
-                        // println!("Remove box {} label {}: {}", op.box_id, op.label, entry[pos].strength);
-                        entry.remove(pos);
-                    }
+                } else if let Some(pos) = entry.iter().position(|x| x.label == op.label) {
+                    // println!("Remove box {} label {}: {}", op.box_id, op.label, entry[pos].strength);
+                    entry.remove(pos);
                 }
                 acc
             });
 
     // println!("Map: {:?}", map);
 
-    return results.iter().enumerate().fold(0, |acc, (box_idx, item)| {
+    results.iter().enumerate().fold(0, |acc, (box_idx, item)| {
         acc + item.iter().enumerate().fold(0, |acc, (lens_idx, lens)| {
             acc + ((box_idx as u64 + 1) * (lens_idx as u64 + 1) * lens.strength as u64)
         })
-    });
+    })
 }
 
-const PUZZLE_FILENAME: &'static str = "./src/puzzle.txt";
+const PUZZLE_FILENAME: &str = "./src/puzzle.txt";
 
 fn main() {
     let start = Instant::now();
@@ -108,7 +106,7 @@ fn main() {
 mod tests {
     use super::*;
 
-    const EXAMPLE_FILENAME: &'static str = "./src/example.txt";
+    const EXAMPLE_FILENAME: &str = "./src/example.txt";
 
     #[test]
     fn test1() {

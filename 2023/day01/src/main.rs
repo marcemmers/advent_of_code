@@ -1,11 +1,9 @@
 use std::fs;
 use std::time::Instant;
 
-const EXAMPLE_FILENAME: &'static str = "./src/example.txt";
-const EXAMPLE2_FILENAME: &'static str = "./src/example2.txt";
-const PUZZLE_FILENAME: &'static str = "./src/puzzle.txt";
+const PUZZLE_FILENAME: &str = "./src/puzzle.txt";
 
-fn solve1(filename: &str) {
+fn solve1(filename: &str) -> i32 {
     println!("Solving for file: {filename}");
     let input = fs::read_to_string(filename).expect("Should have been read");
 
@@ -22,10 +20,10 @@ fn solve1(filename: &str) {
         sum += number;
     }
 
-    println!("Total: {sum}");
+    sum
 }
 
-fn solve2(filename: &str) {
+fn solve2(filename: &str) -> i32 {
     println!("Solving for file: {filename}");
     let input = fs::read_to_string(filename).expect("Should have been read");
 
@@ -36,7 +34,7 @@ fn solve2(filename: &str) {
     for line in lines {
         let mut replaced_line = line.to_string();
 
-        let values = vec![
+        let values = [
             "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
         ];
         loop {
@@ -88,20 +86,35 @@ fn solve2(filename: &str) {
         sum += number;
     }
 
-    println!("Total: {sum}");
+    sum
 }
 
 fn main() {
     let start = Instant::now();
-
-    solve1(EXAMPLE_FILENAME);
-    solve1(PUZZLE_FILENAME);
-
+    let sum = solve1(PUZZLE_FILENAME);
+    println!("Total: {sum}");
     println!("Solved 1 in {:?}\n\n", start.elapsed());
+
     let start = Instant::now();
-
-    solve2(EXAMPLE2_FILENAME);
-    solve2(PUZZLE_FILENAME);
-
+    let sum = solve2(PUZZLE_FILENAME);
+    println!("Total: {sum}");
     println!("Solved 2 in {:?}", start.elapsed());
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const EXAMPLE_FILENAME: &str = "./src/example.txt";
+    const EXAMPLE2_FILENAME: &str = "./src/example2.txt";
+
+    #[test]
+    fn test1() {
+        assert_eq!(solve1(EXAMPLE_FILENAME), 142);
+    }
+
+    #[test]
+    fn test2() {
+        assert_eq!(solve2(EXAMPLE2_FILENAME), 281);
+    }
 }

@@ -1,23 +1,22 @@
-use std::time::Instant;
 use std::fs;
+use std::time::Instant;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default)]
 struct Coord {
     x: i128,
     y: i128,
-    z: i128
+    z: i128,
 }
 
 impl Coord {
-    fn new() -> Self {
-        Coord{x:0, y: 0, z: 0}
-    }
-
     fn new_from_vec(input: &[i128]) -> Self {
-        Coord{x: input[0], y: input[1], z: input[2]}
+        Coord {
+            x: input[0],
+            y: input[1],
+            z: input[2],
+        }
     }
 }
-
 
 #[derive(Debug)]
 struct Hailstone {
@@ -28,9 +27,18 @@ struct Hailstone {
 impl Hailstone {
     fn new_from_line(line: &str) -> Self {
         let (position, velocity) = line.split_once('@').unwrap();
-        let positions: Vec<i128> = position.split(',').map(|pos| pos.trim().parse::<i128>().unwrap()).collect();
-        let velocities: Vec<i128> = velocity.split(',').map(|pos| pos.trim().parse::<i128>().unwrap()).collect();
-        Hailstone{position: Coord::new_from_vec(positions.as_slice()), velocity: Coord::new_from_vec(velocities.as_slice())}
+        let positions: Vec<i128> = position
+            .split(',')
+            .map(|pos| pos.trim().parse::<i128>().unwrap())
+            .collect();
+        let velocities: Vec<i128> = velocity
+            .split(',')
+            .map(|pos| pos.trim().parse::<i128>().unwrap())
+            .collect();
+        Hailstone {
+            position: Coord::new_from_vec(positions.as_slice()),
+            velocity: Coord::new_from_vec(velocities.as_slice()),
+        }
     }
 
     fn future_stone(&self, time: i128) -> Self {
@@ -39,7 +47,10 @@ impl Hailstone {
         new_pos.y += self.velocity.y * time;
         new_pos.z += self.velocity.z * time;
 
-        Hailstone{position: new_pos, velocity: self.velocity}
+        Hailstone {
+            position: new_pos,
+            velocity: self.velocity,
+        }
     }
 
     fn intersect_xy(&self, other: &Hailstone) -> Option<Coord> {
@@ -63,7 +74,7 @@ impl Hailstone {
         // println!("t: {t}");
         // println!("u: {u}");
 
-        if t < 0f64 || t > 1f64 || u < 0f64 || u > 1f64 {
+        if !(0f64..=1f64).contains(&t) || !(0f64..=1f64).contains(&u) {
             return None;
         }
 
@@ -71,37 +82,49 @@ impl Hailstone {
         let y = y1 as f64 + t * (y2 - y1) as f64;
 
         // println!("P: {}, {}", x, y);
-        return Some(Coord{x: x as i128, y: y as i128, z: 0});
+        Some(Coord {
+            x: x as i128,
+            y: y as i128,
+            z: 0,
+        })
     }
 
     fn to_linear_equation_xy(&self, other: &Self) -> Vec<f64> {
-        vec![
+        [
             self.velocity.y - other.velocity.y,
             other.position.y - self.position.y,
             other.velocity.x - self.velocity.x,
             self.position.x - other.position.x,
-            other.position.y * other.velocity.x - other.position.x * other.velocity.y + self.position.x * self.velocity.y - self.position.y * self.velocity.x
-        ].iter().map(|x| *x as f64).collect()
+            other.position.y * other.velocity.x - other.position.x * other.velocity.y
+                + self.position.x * self.velocity.y
+                - self.position.y * self.velocity.x,
+        ]
+        .iter()
+        .map(|x| *x as f64)
+        .collect()
     }
 
     fn to_linear_equation_xz(&self, other: &Self) -> Vec<f64> {
-        vec![
+        [
             self.velocity.z - other.velocity.z,
             other.position.z - self.position.z,
             other.velocity.x - self.velocity.x,
             self.position.x - other.position.x,
-            other.position.z * other.velocity.x - other.position.x * other.velocity.z + self.position.x * self.velocity.z - self.position.z * self.velocity.x
-        ].iter().map(|x| *x as f64).collect()
+            other.position.z * other.velocity.x - other.position.x * other.velocity.z
+                + self.position.x * self.velocity.z
+                - self.position.z * self.velocity.x,
+        ]
+        .iter()
+        .map(|x| *x as f64)
+        .collect()
     }
-
 }
-
 
 fn solve1(filename: &str, min: i128, max: i128) -> u64 {
     println!("Solving for file: {filename}");
     let input = fs::read_to_string(filename).expect("Should have been read");
 
-    let hailstones: Vec<Hailstone> = input.lines().map(|line| Hailstone::new_from_line(line)).collect();
+    let hailstones: Vec<Hailstone> = input.lines().map(Hailstone::new_from_line).collect();
 
     // println!("Hailstones: {:?}", hailstones);
 
@@ -120,16 +143,15 @@ fn solve1(filename: &str, min: i128, max: i128) -> u64 {
         }
     }
 
-    return sum;
+    sum
 }
-
 
 fn gaussian_elimination(matrix: &mut [Vec<f64>]) -> Vec<f64> {
     assert_ne!(matrix.len(), 0);
     assert_ne!(matrix[0].len(), 0);
     let m = matrix.len();
     let n = matrix[0].len();
-    assert_eq!(m, n-1);
+    assert_eq!(m, n - 1);
 
     let mut h = 0;
     let mut k = 0;
@@ -137,7 +159,11 @@ fn gaussian_elimination(matrix: &mut [Vec<f64>]) -> Vec<f64> {
     // println!("Input: {:?}", matrix);
 
     while h < m && k < n {
-        let i_max = (h..m).map(|i| (i, matrix[i][k].abs())).max_by(|(_, a), (_, b)| a.total_cmp(b)).map(|(i, _)| i).unwrap();
+        let i_max = (h..m)
+            .map(|i| (i, matrix[i][k].abs()))
+            .max_by(|(_, a), (_, b)| a.total_cmp(b))
+            .map(|(i, _)| i)
+            .unwrap();
 
         if matrix[i_max][k] == 0f64 {
             k += 1;
@@ -146,10 +172,10 @@ fn gaussian_elimination(matrix: &mut [Vec<f64>]) -> Vec<f64> {
             matrix[i_max] = matrix[h].clone();
             matrix[h] = copy;
 
-            for i in (h+1)..m {
+            for i in (h + 1)..m {
                 let f = matrix[i][k] / matrix[h][k];
                 matrix[i][k] = 0f64;
-                for j in (k+1)..n {
+                for j in (k + 1)..n {
                     matrix[i][j] -= matrix[h][j] * f;
                 }
             }
@@ -171,25 +197,22 @@ fn gaussian_elimination(matrix: &mut [Vec<f64>]) -> Vec<f64> {
 
     // println!("Result: {:?}", matrix);
 
-    let result = (0..m).map(|i| matrix[i][m] / matrix[i][i]).collect();
-
     // println!("Result: {:?}", result);
 
-    return result;
+    (0..m).map(|i| matrix[i][m] / matrix[i][i]).collect()
 }
-
 
 fn solve2(filename: &str) -> i128 {
     println!("Solving for file: {filename}");
     let input = fs::read_to_string(filename).expect("Should have been read");
 
-    let hailstones: Vec<Hailstone> = input.lines().map(|line| Hailstone::new_from_line(line)).collect();
+    let hailstones: Vec<Hailstone> = input.lines().map(Hailstone::new_from_line).collect();
 
     let mut input = [
         hailstones[0].to_linear_equation_xy(&hailstones[1]),
         hailstones[0].to_linear_equation_xy(&hailstones[2]),
         hailstones[0].to_linear_equation_xy(&hailstones[3]),
-        hailstones[0].to_linear_equation_xy(&hailstones[4])
+        hailstones[0].to_linear_equation_xy(&hailstones[4]),
     ];
 
     let result_xy = gaussian_elimination(&mut input);
@@ -198,7 +221,7 @@ fn solve2(filename: &str) -> i128 {
         hailstones[0].to_linear_equation_xz(&hailstones[1]),
         hailstones[0].to_linear_equation_xz(&hailstones[2]),
         hailstones[0].to_linear_equation_xz(&hailstones[3]),
-        hailstones[0].to_linear_equation_xz(&hailstones[4])
+        hailstones[0].to_linear_equation_xz(&hailstones[4]),
     ];
 
     let result_xz = gaussian_elimination(&mut input2);
@@ -209,15 +232,17 @@ fn solve2(filename: &str) -> i128 {
 
     println!("Result: x={x}, y={y}, z={z}");
 
-    return x + y + z;
+    x + y + z
 }
 
-
-const PUZZLE_FILENAME: &'static str = "./src/puzzle.txt";
+const PUZZLE_FILENAME: &str = "./src/puzzle.txt";
 
 fn main() {
     let start = Instant::now();
-    println!("Result of 1: {}", solve1(PUZZLE_FILENAME, 200000000000000, 400000000000000));
+    println!(
+        "Result of 1: {}",
+        solve1(PUZZLE_FILENAME, 200000000000000, 400000000000000)
+    );
     println!("Solved 1 in {:?}\n\n", start.elapsed());
 
     let start = Instant::now();
@@ -225,12 +250,11 @@ fn main() {
     println!("Solved 2 in {:?}", start.elapsed());
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    const EXAMPLE_FILENAME: &'static str = "./src/example.txt";
+    const EXAMPLE_FILENAME: &str = "./src/example.txt";
 
     #[test]
     fn test1() {
@@ -244,12 +268,18 @@ mod tests {
 
     #[test]
     fn test_gauss() {
-        let mut matrix = [vec![2f64, 1f64, -1f64, 8f64],
-        vec![-3f64, -1f64, 2f64, -11f64],
-        vec![-2f64, 1f64, 2f64, -3f64]];
-        let result = vec![
-            2f64, 3f64, -1f64,
+        let mut matrix = [
+            vec![2f64, 1f64, -1f64, 8f64],
+            vec![-3f64, -1f64, 2f64, -11f64],
+            vec![-2f64, 1f64, 2f64, -3f64],
         ];
-        assert_eq!(gaussian_elimination(&mut matrix).iter().map(|x| x.round()).collect::<Vec<f64>>(), result);
+        let result = vec![2f64, 3f64, -1f64];
+        assert_eq!(
+            gaussian_elimination(&mut matrix)
+                .iter()
+                .map(|x| x.round())
+                .collect::<Vec<f64>>(),
+            result
+        );
     }
 }

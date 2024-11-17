@@ -3,7 +3,7 @@ use std::fs;
 use std::str::{Chars, Lines};
 use std::time::Instant;
 
-const PUZZLE_FILENAME: &'static str = "./src/puzzle.txt";
+const PUZZLE_FILENAME: &str = "./src/puzzle.txt";
 
 fn calculate_steps(
     map: &HashMap<String, (String, String)>,
@@ -15,9 +15,9 @@ fn calculate_steps(
     let step = |cur_pos: &String, dir: char| -> String {
         let item = map.get(cur_pos.as_str()).unwrap();
         if dir == 'L' {
-            return item.0.clone();
+            item.0.clone()
         } else {
-            return item.1.clone();
+            item.1.clone()
         }
     };
 
@@ -29,7 +29,7 @@ fn calculate_steps(
         })
         .count();
 
-    return steps + 1;
+    steps + 1
 }
 
 fn lcm(first: usize, second: usize) -> usize {
@@ -77,7 +77,7 @@ fn solve1(filename: &str) -> u64 {
 
     // println!("Map: {:?}", map);
     println!("Steps: {steps}");
-    return steps as u64;
+    steps as u64
 }
 
 fn solve2(filename: &str) -> u64 {
@@ -100,11 +100,11 @@ fn solve2(filename: &str) -> u64 {
         })
     });
 
-    let steps = results.fold(1usize, |acc, x| lcm(acc, x));
+    let steps = results.fold(1usize, lcm);
 
     // println!("Map: {:?}", map);
     println!("Steps: {steps}");
-    return steps as u64;
+    steps as u64
 }
 
 fn main() {
@@ -121,8 +121,8 @@ fn main() {
 mod tests {
     use super::*;
 
-    const EXAMPLE_FILENAME: &'static str = "./src/example.txt";
-    const EXAMPLE2_FILENAME: &'static str = "./src/example2.txt";
+    const EXAMPLE_FILENAME: &str = "./src/example.txt";
+    const EXAMPLE2_FILENAME: &str = "./src/example2.txt";
 
     #[test]
     fn test1() {

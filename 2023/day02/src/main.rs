@@ -4,8 +4,8 @@ use std::time::Instant;
 #[macro_use]
 extern crate scan_fmt;
 
-const EXAMPLE_FILENAME: &'static str = "./src/example.txt";
-const PUZZLE_FILENAME: &'static str = "./src/puzzle.txt";
+const EXAMPLE_FILENAME: &str = "./src/example.txt";
+const PUZZLE_FILENAME: &str = "./src/puzzle.txt";
 
 fn solve1(filename: &str) {
     let limit = HashMap::from([("red", 12), ("green", 13), ("blue", 14)]);

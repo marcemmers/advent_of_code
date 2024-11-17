@@ -1,5 +1,5 @@
-use std::time::Instant;
 use std::fs;
+use std::time::Instant;
 
 fn solve1(filename: &str) -> u64 {
     println!("Solving for file: {filename}");
@@ -7,9 +7,8 @@ fn solve1(filename: &str) -> u64 {
 
     let lines = input.lines();
 
-    return 0;
+    0
 }
-
 
 fn solve2(filename: &str) -> u64 {
     println!("Solving for file: {filename}");
@@ -17,11 +16,10 @@ fn solve2(filename: &str) -> u64 {
 
     let lines = input.lines();
 
-    return 0;
+    0
 }
 
-
-const PUZZLE_FILENAME: &'static str = "./src/puzzle.txt";
+const PUZZLE_FILENAME: &str = "./src/puzzle.txt";
 
 fn main() {
     let start = Instant::now();
@@ -33,12 +31,11 @@ fn main() {
     println!("Solved 2 in {:?}", start.elapsed());
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    const EXAMPLE_FILENAME: &'static str = "./src/example.txt";
+    const EXAMPLE_FILENAME: &str = "./src/example.txt";
 
     #[test]
     fn test1() {

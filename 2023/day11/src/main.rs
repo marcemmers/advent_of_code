@@ -27,7 +27,7 @@ fn collect_points(input: &Vec<&str>) -> Vec<Point> {
         }
     }
 
-    return result;
+    result
 }
 
 fn solve(filename: &str, empty_space: i64) -> u64 {
@@ -50,7 +50,10 @@ fn solve(filename: &str, empty_space: i64) -> u64 {
         }
     }
 
-    let lines_it: Vec<Vec<char>> = lines.iter().map(|x| x.chars().collect::<Vec<char>>()).collect();
+    let lines_it: Vec<Vec<char>> = lines
+        .iter()
+        .map(|x| x.chars().collect::<Vec<char>>())
+        .collect();
 
     for idx in (0..lines[0].len()).rev() {
         if lines_it.iter().all(|x| x[idx] == '.') {
@@ -66,14 +69,14 @@ fn solve(filename: &str, empty_space: i64) -> u64 {
         .iter()
         .scan(galaxies.iter(), |it, p1| {
             it.next();
-            Some(it.clone().fold(0, |acc, p2| acc + p1.get_distance(&p2)))
+            Some(it.clone().fold(0, |acc, p2| acc + p1.get_distance(p2)))
         })
         .sum();
 
-    return sum as u64;
+    sum as u64
 }
 
-const PUZZLE_FILENAME: &'static str = "./src/puzzle.txt";
+const PUZZLE_FILENAME: &str = "./src/puzzle.txt";
 
 fn main() {
     let start = Instant::now();
@@ -89,7 +92,7 @@ fn main() {
 mod tests {
     use super::*;
 
-    const EXAMPLE_FILENAME: &'static str = "./src/example.txt";
+    const EXAMPLE_FILENAME: &str = "./src/example.txt";
 
     #[test]
     fn test1() {

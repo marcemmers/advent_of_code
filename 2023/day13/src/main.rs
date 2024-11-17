@@ -18,15 +18,15 @@ fn find_mirror_row(lines: &Vec<&str>, diff: u64) -> Option<u64> {
             return Some(i as u64);
         }
     }
-    return None;
+    None
 }
 
 fn transpose(lines: Lines) -> Vec<String> {
     let len = lines.clone().next().unwrap().len();
-    return lines.fold(vec![String::new(); len], |mut acc, line| {
+    lines.fold(vec![String::new(); len], |mut acc, line| {
         line.chars().enumerate().for_each(|(i, ch)| acc[i].push(ch));
         acc
-    });
+    })
 }
 
 fn calculate_mirror_value(block: &str, diff: u64) -> u64 {
@@ -45,7 +45,7 @@ fn calculate_mirror_value(block: &str, diff: u64) -> u64 {
 
     println!("Found none for:");
     println!("{block}");
-    return 0;
+    0
 }
 
 fn solve(filename: &str, diff: u64) -> u64 {
@@ -54,10 +54,10 @@ fn solve(filename: &str, diff: u64) -> u64 {
 
     let blocks: Vec<&str> = input.split("\n\n").collect();
 
-    return blocks.iter().map(|x| calculate_mirror_value(x, diff)).sum();
+    blocks.iter().map(|x| calculate_mirror_value(x, diff)).sum()
 }
 
-const PUZZLE_FILENAME: &'static str = "./src/puzzle.txt";
+const PUZZLE_FILENAME: &str = "./src/puzzle.txt";
 
 fn main() {
     let start = Instant::now();
@@ -73,7 +73,7 @@ fn main() {
 mod tests {
     use super::*;
 
-    const EXAMPLE_FILENAME: &'static str = "./src/example.txt";
+    const EXAMPLE_FILENAME: &str = "./src/example.txt";
 
     #[test]
     fn test1() {

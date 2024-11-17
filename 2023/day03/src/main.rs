@@ -1,9 +1,9 @@
+use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::collections::HashMap;
 use std::time::Instant;
 use std::{fs, str::Lines};
 
-const EXAMPLE_FILENAME: &'static str = "./src/example.txt";
-const PUZZLE_FILENAME: &'static str = "./src/puzzle.txt";
+const PUZZLE_FILENAME: &str = "./src/puzzle.txt";
 
 fn is_symbol(input: char) -> bool {
     !input.is_numeric() && input != '.'
@@ -22,7 +22,7 @@ fn contains_symbol(line: &str, x_start: i32, x_len: i32) -> bool {
     } else {
         x_end
     };
-    return line[x as usize..x_end].chars().any(|ch| is_symbol(ch));
+    line[x as usize..x_end].chars().any(is_symbol)
 }
 
 fn is_touching_symbol(input: Lines, y: i32, x_start: i32, x_len: i32) -> bool {
@@ -31,10 +31,10 @@ fn is_touching_symbol(input: Lines, y: i32, x_start: i32, x_len: i32) -> bool {
         .filter(|(i, _)| i.abs_diff(y as usize) <= 1)
         .map(|(_, x)| x);
     let mut lines_mut = lines.into_iter();
-    return lines_mut.any(|line| contains_symbol(line, x_start, x_len));
+    lines_mut.any(|line| contains_symbol(line, x_start, x_len))
 }
 
-fn solve1(filename: &str) {
+fn solve1(filename: &str) -> i32 {
     println!("Solving for file: {filename}");
     let input = fs::read_to_string(filename).expect("Should have been read");
 
@@ -57,25 +57,23 @@ fn solve1(filename: &str) {
                 value *= 10;
                 value += ch.to_digit(10).unwrap() as i32;
                 x_len += 1;
-            } else {
-                if x_start != -1 {
-                    if is_touching_symbol(lines.clone(), y as i32, x_start, x_len) {
-                        sum += value;
-                        output.push_str(value.to_string().as_str());
-                        output.push('.');
-                        // println!("Counting value [{x_start},{y}]: {value}");
-                    } else {
-                        std::iter::repeat('.')
-                            .take((x_len + 1) as usize)
-                            .for_each(|c| output.push(c));
-                    }
-
-                    x_start = -1;
-                    x_len = 0;
-                    value = 0;
-                } else {
+            } else if x_start != -1 {
+                if is_touching_symbol(lines.clone(), y as i32, x_start, x_len) {
+                    sum += value;
+                    output.push_str(value.to_string().as_str());
                     output.push('.');
+                    // println!("Counting value [{x_start},{y}]: {value}");
+                } else {
+                    std::iter::repeat('.')
+                        .take((x_len + 1) as usize)
+                        .for_each(|c| output.push(c));
                 }
+
+                x_start = -1;
+                x_len = 0;
+                value = 0;
+            } else {
+                output.push('.');
             }
         }
         if x_start != -1 {
@@ -92,8 +90,7 @@ fn solve1(filename: &str) {
         output.push('\n');
     }
 
-    // println!("Output:\n{output}");
-    println!("Total: {sum}");
+    sum
 }
 
 fn contains_gear_symbol(line: &str, y: usize, x_start: i32, x_len: i32) -> Option<Coords> {
@@ -110,10 +107,10 @@ fn contains_gear_symbol(line: &str, y: usize, x_start: i32, x_len: i32) -> Optio
         x_end
     };
     let x_pos = line[x as usize..x_end].chars().position(|ch| ch == '*');
-    return x_pos.map(|x_pos| Coords {
+    x_pos.map(|x_pos| Coords {
         x: x as usize + x_pos,
         y,
-    });
+    })
 }
 
 fn is_touching_gear_symbol(input: Lines, y: i32, x_start: i32, x_len: i32) -> Option<Coords> {
@@ -121,7 +118,7 @@ fn is_touching_gear_symbol(input: Lines, y: i32, x_start: i32, x_len: i32) -> Op
         .enumerate()
         .filter(|(i, _)| i.abs_diff(y as usize) <= 1);
     let mut lines_mut = lines.into_iter();
-    return lines_mut.find_map(|(y_line, line)| contains_gear_symbol(line, y_line, x_start, x_len));
+    lines_mut.find_map(|(y_line, line)| contains_gear_symbol(line, y_line, x_start, x_len))
 }
 
 #[derive(Eq, PartialEq, Hash, Clone)]
@@ -130,7 +127,7 @@ struct Coords {
     y: usize,
 }
 
-fn solve2(filename: &str) {
+fn solve2(filename: &str) -> i32 {
     println!("Solving for file: {filename}");
     let input = fs::read_to_string(filename).expect("Should have been read");
 
@@ -152,51 +149,69 @@ fn solve2(filename: &str) {
                 value *= 10;
                 value += ch.to_digit(10).unwrap() as i32;
                 x_len += 1;
-            } else {
-                if x_start != -1 {
-                    let coords = is_touching_gear_symbol(lines.clone(), y as i32, x_start, x_len);
-                    if let Some(coords) = coords {
-                        if gears.contains_key(&coords) {
-                            sum += value * gears.get(&coords).unwrap();
-                            gears.remove(&coords);
-                        } else {
-                            gears.insert(coords, value);
+            } else if x_start != -1 {
+                let coords = is_touching_gear_symbol(lines.clone(), y as i32, x_start, x_len);
+                if let Some(coords) = coords {
+                    match gears.entry(coords) {
+                        Occupied(v) => {
+                            sum += value * v.get();
+                            v.remove();
+                        }
+                        Vacant(v) => {
+                            v.insert(value);
                         }
                     }
-
-                    x_start = -1;
-                    x_len = 0;
-                    value = 0;
                 }
+
+                x_start = -1;
+                x_len = 0;
+                value = 0;
             }
         }
         if x_start != -1 {
             let coords = is_touching_gear_symbol(lines.clone(), y as i32, x_start, x_len);
             if let Some(coords) = coords {
-                if gears.contains_key(&coords) {
-                    sum += value * gears.get(&coords).unwrap();
-                    gears.remove(&coords);
-                } else {
-                    gears.insert(coords, value);
+                match gears.entry(coords) {
+                    Occupied(v) => {
+                        sum += value * v.get();
+                        v.remove();
+                    }
+                    Vacant(v) => {
+                        v.insert(value);
+                    }
                 }
             }
         }
     }
 
-    println!("Total: {sum}");
+    sum
 }
 
 fn main() {
     let start = Instant::now();
-
-    solve1(EXAMPLE_FILENAME);
-    solve1(PUZZLE_FILENAME);
-
+    let sum = solve1(PUZZLE_FILENAME);
+    println!("Total: {sum}");
     println!("Solved 1 in {:?}\n\n", start.elapsed());
+
     let start = Instant::now();
-
-    solve2(EXAMPLE_FILENAME);
-    solve2(PUZZLE_FILENAME);
-
+    let sum = solve2(PUZZLE_FILENAME);
+    println!("Total: {sum}");
     println!("Solved 2 in {:?}", start.elapsed());
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const EXAMPLE_FILENAME: &str = "./src/example.txt";
+
+    #[test]
+    fn test1() {
+        assert_eq!(solve1(EXAMPLE_FILENAME), 4361);
+    }
+
+    #[test]
+    fn test2() {
+        assert_eq!(solve2(EXAMPLE_FILENAME), 467835);
+    }
 }

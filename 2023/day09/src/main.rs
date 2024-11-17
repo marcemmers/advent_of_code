@@ -10,25 +10,25 @@ fn calculate_differences(input: &Vec<i64>) -> Vec<i64> {
 }
 
 fn generate_next(input: &Vec<i64>) -> i64 {
-    let differences = calculate_differences(&input);
+    let differences = calculate_differences(input);
     let retval = if differences.iter().all(|x| *x == 0) {
         *input.last().unwrap()
     } else {
         input.last().unwrap() + generate_next(&differences)
     };
     // println!("Next: {retval}");
-    return retval;
+    retval
 }
 
 fn generate_previous(input: &Vec<i64>) -> i64 {
-    let differences = calculate_differences(&input);
+    let differences = calculate_differences(input);
     let retval = if differences.iter().all(|x| *x == 0) {
         *input.first().unwrap()
     } else {
         input.first().unwrap() - generate_previous(&differences)
     };
     // println!("Next: {retval}");
-    return retval;
+    retval
 }
 
 fn common(filename: &str) -> Vec<Vec<i64>> {
@@ -37,28 +37,28 @@ fn common(filename: &str) -> Vec<Vec<i64>> {
 
     let lines = input.lines();
 
-    return lines
+    lines
         .map(|line| {
             line.split(" ")
                 .map(|val| val.parse::<i64>().unwrap())
                 .collect::<Vec<i64>>()
         })
-        .collect();
+        .collect()
 }
 
 fn solve1(filename: &str) -> i64 {
     let input = common(filename);
 
-    return input.iter().map(|val| generate_next(&val)).sum();
+    input.iter().map(generate_next).sum()
 }
 
 fn solve2(filename: &str) -> i64 {
     let input = common(filename);
 
-    return input.iter().map(|val| generate_previous(&val)).sum();
+    input.iter().map(generate_previous).sum()
 }
 
-const PUZZLE_FILENAME: &'static str = "./src/puzzle.txt";
+const PUZZLE_FILENAME: &str = "./src/puzzle.txt";
 
 fn main() {
     let start = Instant::now();
@@ -74,7 +74,7 @@ fn main() {
 mod tests {
     use super::*;
 
-    const EXAMPLE_FILENAME: &'static str = "./src/example.txt";
+    const EXAMPLE_FILENAME: &str = "./src/example.txt";
 
     #[test]
     fn test1() {

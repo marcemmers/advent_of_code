@@ -22,7 +22,7 @@ fn generate_map(lines: &mut Lines) -> Vec<MapItem> {
     let mut result: Vec<MapItem> = Vec::new();
     loop {
         let line = lines.next();
-        if line == None {
+        if line.is_none() {
             break;
         }
         let line = line.unwrap().trim();
@@ -37,7 +37,7 @@ fn generate_map(lines: &mut Lines) -> Vec<MapItem> {
             size: values.next().unwrap(),
         });
     }
-    return result;
+    result
 }
 
 fn generate_transformation(lines: Lines) -> Vec<Vec<MapItem>> {
@@ -46,7 +46,7 @@ fn generate_transformation(lines: Lines) -> Vec<Vec<MapItem>> {
 
     loop {
         let line = lines.next();
-        if line == None {
+        if line.is_none() {
             break;
         }
         let line: &str = line.unwrap().trim();
@@ -57,7 +57,7 @@ fn generate_transformation(lines: Lines) -> Vec<Vec<MapItem>> {
             transforms.push(generate_map(&mut lines));
         }
     }
-    return transforms;
+    transforms
 }
 
 fn perform_transform(tranform: &Vec<MapItem>, item: u32) -> u32 {
@@ -68,14 +68,14 @@ fn perform_transform(tranform: &Vec<MapItem>, item: u32) -> u32 {
             return dst;
         }
     }
-    return item;
+    item
 }
 
-fn find_location(transforms: &Vec<Vec<MapItem>>, seed: u32) -> u32 {
+fn find_location(transforms: &[Vec<MapItem>], seed: u32) -> u32 {
     let result = transforms
         .iter()
         .fold(seed, |acc, e| perform_transform(e, acc));
-    return result;
+    result
 }
 
 fn get_seeds(line: &str) -> Vec<u32> {
@@ -100,7 +100,7 @@ fn solve1(filename: &str) -> u32 {
 
     let results = seeds.iter().map(|seed| find_location(&transforms, *seed));
 
-    return results.min().unwrap();
+    results.min().unwrap()
 }
 
 fn solve2(filename: &str) -> u32 {
@@ -134,10 +134,10 @@ fn solve2(filename: &str) -> u32 {
         println!("Found new min: {min}");
     }
 
-    return min;
+    min
 }
 
-const PUZZLE_FILENAME: &'static str = "./src/puzzle.txt";
+const PUZZLE_FILENAME: &str = "./src/puzzle.txt";
 
 fn main() {
     let start = Instant::now();
@@ -153,7 +153,7 @@ fn main() {
 mod tests {
     use super::*;
 
-    const EXAMPLE_FILENAME: &'static str = "./src/example.txt";
+    const EXAMPLE_FILENAME: &str = "./src/example.txt";
 
     #[test]
     fn test1() {

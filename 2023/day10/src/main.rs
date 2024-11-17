@@ -105,7 +105,7 @@ impl Grid {
             new_grid.grid.push(line1.chars().collect());
             new_grid.grid.push(line0.chars().collect());
         }
-        return new_grid;
+        new_grid
     }
 
     fn reduce(&self) -> Grid {
@@ -162,7 +162,7 @@ fn make_grid(filename: &str) -> Grid {
     for line in lines {
         grid.insert(line.chars().collect());
     }
-    return grid;
+    grid
 }
 
 fn find_start(grid: &Grid) -> Option<Point> {
@@ -176,7 +176,7 @@ fn find_start(grid: &Grid) -> Option<Point> {
             }
         }
     }
-    return None;
+    None
 }
 
 fn find_first_heading(grid: &Grid, start: Point) -> Option<Heading> {
@@ -197,13 +197,13 @@ fn find_first_heading(grid: &Grid, start: Point) -> Option<Heading> {
     {
         return Some(Heading::West);
     }
-    return None;
+    None
 }
 
 fn calculate_loop_length(grid: &Grid, start: Point, mut new_grid: Option<&mut Grid>) -> usize {
     let mut length = 0;
     let mut cur_pos = start;
-    let mut heading = find_first_heading(&grid, start).expect("Should find a heading");
+    let mut heading = find_first_heading(grid, start).expect("Should find a heading");
 
     loop {
         if let Some(ref mut new_grid) = new_grid {
@@ -247,7 +247,7 @@ fn calculate_loop_length(grid: &Grid, start: Point, mut new_grid: Option<&mut Gr
         }
     }
 
-    return length;
+    length
 }
 
 fn is_outside_heading(grid: &Grid, point: Point, heading: Heading) -> bool {
@@ -258,14 +258,13 @@ fn is_outside_heading(grid: &Grid, point: Point, heading: Heading) -> bool {
     } else {
         return true;
     }
-    return false;
+    false
 }
 
 fn is_outside(grid: &Grid, point: Point) -> bool {
-    is_outside_heading(&grid, point, Heading::North)
-        || is_outside_heading(&grid, point, Heading::South)
-        || is_outside_heading(&grid, point, Heading::East)
-        || is_outside_heading(&grid, point, Heading::West)
+    [Heading::North, Heading::South, Heading::East, Heading::West]
+        .iter()
+        .any(|heading| is_outside_heading(grid, point, *heading))
 }
 
 fn solve1(filename: &str) -> u64 {
@@ -274,7 +273,7 @@ fn solve1(filename: &str) -> u64 {
     let start = find_start(&grid).expect("There should be one point");
 
     // println!("Start: {:?}", start);
-    return calculate_loop_length(&grid, start, None) as u64 / 2;
+    calculate_loop_length(&grid, start, None) as u64 / 2
 }
 
 fn solve2(filename: &str) -> u64 {
@@ -304,11 +303,9 @@ fn solve2(filename: &str) -> u64 {
                 };
 
                 if let Some(value) = expanded.get_value(point) {
-                    if value == '.' {
-                        if is_outside(&expanded, point) {
-                            expanded.set_value(point, 'O');
-                            found_any = true;
-                        }
+                    if value == '.' && is_outside(&expanded, point) {
+                        expanded.set_value(point, 'O');
+                        found_any = true;
                     }
                 }
             }
@@ -321,10 +318,10 @@ fn solve2(filename: &str) -> u64 {
 
     // reduced.print();
 
-    return reduced.grid.concat().iter().filter(|x| **x == '.').count() as u64;
+    reduced.grid.concat().iter().filter(|x| **x == '.').count() as u64
 }
 
-const PUZZLE_FILENAME: &'static str = "./src/puzzle.txt";
+const PUZZLE_FILENAME: &str = "./src/puzzle.txt";
 
 fn main() {
     let start = Instant::now();
@@ -340,9 +337,9 @@ fn main() {
 mod tests {
     use super::*;
 
-    const EXAMPLE_FILENAME: &'static str = "./src/example.txt";
-    const EXAMPLE2_FILENAME: &'static str = "./src/example2.txt";
-    const EXAMPLE3_FILENAME: &'static str = "./src/example3.txt";
+    const EXAMPLE_FILENAME: &str = "./src/example.txt";
+    const EXAMPLE2_FILENAME: &str = "./src/example2.txt";
+    const EXAMPLE3_FILENAME: &str = "./src/example3.txt";
 
     #[test]
     fn test1() {

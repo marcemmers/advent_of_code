@@ -1,8 +1,8 @@
 use std::fs;
 use std::time::Instant;
 
-const EXAMPLE_FILENAME: &'static str = "./src/example.txt";
-const PUZZLE_FILENAME: &'static str = "./src/puzzle.txt";
+const EXAMPLE_FILENAME: &str = "./src/example.txt";
+const PUZZLE_FILENAME: &str = "./src/puzzle.txt";
 
 // fn calculate_distances(time: u64, min_distance: u64) -> u64 {
 //     return (0..=time)
@@ -24,7 +24,7 @@ fn calculate_distances_math(time: u64, min_distance: u64) -> u64 {
     let s1 = s1.ceil();
     let s2 = s2.floor();
 
-    return (s2 - s1) as u64 + 1;
+    (s2 - s1) as u64 + 1
 }
 
 fn solve1(filename: &str) {
@@ -36,7 +36,6 @@ fn solve1(filename: &str) {
         line.split_once(':')
             .unwrap()
             .1
-            .trim()
             .split_whitespace()
             .filter_map(|x| x.parse::<u64>().ok())
             .collect()

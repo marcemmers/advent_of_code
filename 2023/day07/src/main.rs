@@ -2,10 +2,10 @@ use std::cmp::{Ordering, Reverse};
 use std::fs;
 use std::time::Instant;
 
-const EXAMPLE_FILENAME: &'static str = "./src/example.txt";
-const PUZZLE_FILENAME: &'static str = "./src/puzzle.txt";
+const EXAMPLE_FILENAME: &str = "./src/example.txt";
+const PUZZLE_FILENAME: &str = "./src/puzzle.txt";
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
 enum HandType {
     FiveOfAKind,
     FourOfAKind,
@@ -17,7 +17,7 @@ enum HandType {
 }
 
 fn hand_from_cards(cards: &str) -> HandType {
-    let mut occurences = vec![0; 15];
+    let mut occurences = [0; 15];
     cards
         .chars()
         .for_each(|x| occurences[x.to_digit(16).unwrap() as usize] += 1);
@@ -29,7 +29,7 @@ fn hand_from_cards(cards: &str) -> HandType {
 
     occurences.sort_by_key(|w| Reverse(*w));
 
-    return match occurences[0] + jokers {
+    match occurences[0] + jokers {
         5 => HandType::FiveOfAKind,
         4 => HandType::FourOfAKind,
         3 if occurences[1] == 2 => HandType::FullHouse,
@@ -37,10 +37,10 @@ fn hand_from_cards(cards: &str) -> HandType {
         2 if occurences[1] == 2 => HandType::TwoPair,
         2 => HandType::OnePair,
         _ => HandType::HighCard,
-    };
+    }
 }
 
-#[derive(Debug, Clone, Ord, Eq)]
+#[derive(Debug, Clone, Eq)]
 struct Hand {
     cards: String,
     rank: HandType,
@@ -67,16 +67,19 @@ impl Hand {
 
 impl PartialOrd for Hand {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        if self.rank != other.rank {
-            return self.rank.partial_cmp(&other.rank);
-        }
-        return other.cards.partial_cmp(&self.cards);
+        Some((self.rank, &other.cards).cmp(&(other.rank, &self.cards)))
     }
 }
 
 impl PartialEq for Hand {
     fn eq(&self, other: &Self) -> bool {
-        self.rank == other.rank && self.cards == other.cards
+        (self.rank, &self.cards) == (other.rank, &other.cards)
+    }
+}
+
+impl Ord for Hand {
+    fn cmp(&self, other: &Self) -> Ordering {
+        (self.rank, &other.cards).cmp(&(other.rank, &self.cards))
     }
 }
 

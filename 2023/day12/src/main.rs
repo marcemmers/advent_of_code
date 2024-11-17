@@ -3,12 +3,15 @@ use std::time::Instant;
 
 struct SpringMap {
     spring: u128,
-    potential: u128
+    potential: u128,
 }
 
 impl SpringMap {
     fn new() -> SpringMap {
-        SpringMap{ spring: 0, potential: 0 }
+        SpringMap {
+            spring: 0,
+            potential: 0,
+        }
     }
 
     fn parse(input: &str) -> SpringMap {
@@ -17,9 +20,9 @@ impl SpringMap {
             match ch {
                 '#' => map.spring = map.spring.saturating_add(1),
                 '?' => map.potential = map.potential.saturating_add(1),
-                _ => ()
+                _ => (),
             }
-            return map;
+            map
         })
     }
 
@@ -30,7 +33,7 @@ impl SpringMap {
 
     fn next_spring(&self) -> SpringMap {
         let bit = 1u128 << (u128::BITS - self.potential.leading_zeros() - 1);
-        SpringMap{
+        SpringMap {
             spring: self.spring | bit,
             potential: self.potential & !bit,
         }
@@ -38,7 +41,7 @@ impl SpringMap {
 
     fn next_empty(&self) -> SpringMap {
         let bit = 1u128 << (u128::BITS - self.potential.leading_zeros() - 1);
-        SpringMap{
+        SpringMap {
             spring: self.spring,
             potential: self.potential & !bit,
         }
@@ -54,14 +57,14 @@ fn equal_lengths(map: SpringMap, numbers: &[u32]) -> bool {
             return false;
         }
         springs = springs.wrapping_shr(*nr);
-        return true;
+        true
     });
 
     if springs.count_ones() != 0 {
         return false;
     }
 
-    return result;
+    result
 }
 
 fn try_arrangements(map: SpringMap, numbers: &[u32]) -> u64 {
@@ -69,13 +72,7 @@ fn try_arrangements(map: SpringMap, numbers: &[u32]) -> u64 {
         return if equal_lengths(map, numbers) { 1 } else { 0 };
     }
 
-    return try_arrangements(
-        map.next_empty(),
-        &numbers
-    ) + try_arrangements(
-        map.next_spring(),
-        &numbers
-    );
+    try_arrangements(map.next_empty(), numbers) + try_arrangements(map.next_spring(), numbers)
 }
 
 fn calculate_arrangements(line: &str) -> u64 {
@@ -94,10 +91,7 @@ fn calculate_arrangements(line: &str) -> u64 {
     // println!("Springs    {:>#30b}", map.spring);
     // println!("Potential: {:>#30b}", map.potential);
 
-    return try_arrangements(
-        map,
-        numbers.as_slice()
-    );
+    try_arrangements(map, numbers.as_slice())
 }
 
 fn solve1(filename: &str) -> u64 {
@@ -106,9 +100,7 @@ fn solve1(filename: &str) -> u64 {
 
     let lines = input.lines();
 
-    let result = lines.map(|line| calculate_arrangements(line)).sum();
-
-    return result;
+    lines.map(calculate_arrangements).sum()
 }
 
 fn solve2(filename: &str) -> u64 {
@@ -117,10 +109,10 @@ fn solve2(filename: &str) -> u64 {
 
     let lines = input.lines();
 
-    return 0;
+    0
 }
 
-const PUZZLE_FILENAME: &'static str = "./src/puzzle.txt";
+const PUZZLE_FILENAME: &str = "./src/puzzle.txt";
 
 fn main() {
     let start = Instant::now();
@@ -136,7 +128,7 @@ fn main() {
 mod tests {
     use super::*;
 
-    const EXAMPLE_FILENAME: &'static str = "./src/example.txt";
+    const EXAMPLE_FILENAME: &str = "./src/example.txt";
 
     #[test]
     fn test1() {

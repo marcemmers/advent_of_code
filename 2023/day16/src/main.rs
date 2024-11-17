@@ -155,7 +155,7 @@ fn make_grid(filename: &str) -> Grid {
     for line in lines {
         grid.insert(line.chars().collect());
     }
-    return grid;
+    grid
 }
 
 fn trace_light(grid: &Grid, start: Point, heading: Heading, energized_grid: &mut EnergizedGrid) {
@@ -171,7 +171,7 @@ fn trace_light(grid: &Grid, start: Point, heading: Heading, energized_grid: &mut
         } else {
             break;
         }
-        if energized_grid.energize(cur_pos, heading) == None {
+        if energized_grid.energize(cur_pos, heading).is_none() {
             break;
         }
         let next_val = grid.get_value(cur_pos).expect("Should be valid pos");
@@ -228,7 +228,7 @@ fn solve1(filename: &str) -> u64 {
     let mut energized = EnergizedGrid::new_from_size(grid.grid[0].len(), grid.grid.len());
     trace_light(&grid, start, Heading::East, &mut energized);
 
-    return energized.count_energized() as u64;
+    energized.count_energized() as u64
 }
 
 fn solve2(filename: &str) -> u64 {
@@ -256,20 +256,20 @@ fn solve2(filename: &str) -> u64 {
     let start_south =
         (0..grid.grid[0].len()).map(|x| (Point { x: x as i32, y: -1 }, Heading::North));
 
-    return start_west
+    start_west
         .chain(start_east)
         .chain(start_north)
         .chain(start_south)
         .map(|(start, heading)| {
             let mut energized = EnergizedGrid::new_from_size(grid.grid[0].len(), grid.grid.len());
             trace_light(&grid, start, heading, &mut energized);
-            return energized.count_energized() as u64;
+            energized.count_energized() as u64
         })
         .max()
-        .unwrap();
+        .unwrap()
 }
 
-const PUZZLE_FILENAME: &'static str = "./src/puzzle.txt";
+const PUZZLE_FILENAME: &str = "./src/puzzle.txt";
 
 fn main() {
     let start = Instant::now();
@@ -285,7 +285,7 @@ fn main() {
 mod tests {
     use super::*;
 
-    const EXAMPLE_FILENAME: &'static str = "./src/example.txt";
+    const EXAMPLE_FILENAME: &str = "./src/example.txt";
 
     #[test]
     fn test1() {

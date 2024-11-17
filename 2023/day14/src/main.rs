@@ -2,19 +2,19 @@ use std::collections::HashMap;
 use std::fs;
 use std::time::Instant;
 
-fn transpose(input: &Vec<String>) -> Vec<String> {
+fn transpose(input: &[String]) -> Vec<String> {
     let len = input[0].len();
-    return input
+    input
         .iter()
         .fold(vec![String::new(); len], |mut acc, line| {
             line.chars().enumerate().for_each(|(i, ch)| acc[i].push(ch));
             acc
-        });
+        })
 }
 
-fn rotate(input: &Vec<String>) -> Vec<String> {
+fn rotate(input: &[String]) -> Vec<String> {
     let len = input[0].len();
-    return input
+    input
         .iter()
         .fold(vec![String::new(); len], |mut acc, line| {
             line.chars()
@@ -22,7 +22,7 @@ fn rotate(input: &Vec<String>) -> Vec<String> {
                 .enumerate()
                 .for_each(|(i, ch)| acc[i].push(ch));
             acc
-        });
+        })
 }
 
 fn move_to_front(line: &str) -> String {
@@ -46,10 +46,10 @@ fn move_to_front(line: &str) -> String {
         result.push_str(".".repeat(empty_space).as_str());
     }
 
-    return result;
+    result
 }
 
-fn calculate_load(input: &Vec<String>) -> u64 {
+fn calculate_load(input: &[String]) -> u64 {
     input.iter().fold(0, |acc, line| {
         acc + line.chars().rev().enumerate().fold(
             0,
@@ -59,7 +59,7 @@ fn calculate_load(input: &Vec<String>) -> u64 {
 }
 
 #[allow(unused)]
-fn print_grid(input: &Vec<String>) {
+fn print_grid(input: &[String]) {
     println!("Grid:");
 
     for line in transpose(input) {
@@ -71,7 +71,12 @@ fn solve1(filename: &str) -> u64 {
     println!("Solving for file: {filename}");
     let input = fs::read_to_string(filename).expect("Should have been read");
 
-    let lines = transpose(&input.lines().map(|x| x.to_string()).collect());
+    let lines = transpose(
+        &input
+            .lines()
+            .map(|x| x.to_string())
+            .collect::<Vec<String>>(),
+    );
 
     let moved_lines: Vec<String> = lines
         .iter()
@@ -81,17 +86,17 @@ fn solve1(filename: &str) -> u64 {
     // print_grid(&lines);
     // print_grid(&moved_lines);
 
-    return calculate_load(&moved_lines);
+    calculate_load(&moved_lines)
 }
 
-fn move_all(input: &Vec<String>) -> Vec<String> {
+fn move_all(input: &[String]) -> Vec<String> {
     input
         .iter()
         .map(|line| move_to_front(line.as_str()))
         .collect()
 }
 
-fn perform_full_rotation(input: &Vec<String>) -> Vec<String> {
+fn perform_full_rotation(input: &[String]) -> Vec<String> {
     // North
     let step = rotate(&move_all(input));
 
@@ -102,14 +107,19 @@ fn perform_full_rotation(input: &Vec<String>) -> Vec<String> {
     let step = rotate(&move_all(&step));
 
     // East
-    return rotate(&move_all(&step));
+    rotate(&move_all(&step))
 }
 
 fn solve2(filename: &str) -> u64 {
     println!("Solving for file: {filename}");
     let input = fs::read_to_string(filename).expect("Should have been read");
 
-    let lines = transpose(&input.lines().map(|x| x.to_string()).collect());
+    let lines = transpose(
+        &input
+            .lines()
+            .map(|x| x.to_string())
+            .collect::<Vec<String>>(),
+    );
 
     let mut map: HashMap<Vec<String>, i32> = HashMap::new();
 
@@ -128,7 +138,7 @@ fn solve2(filename: &str) -> u64 {
             return None;
         }
         map.insert(new_state.clone(), idx);
-        return Some(new_state);
+        Some(new_state)
     });
 
     let diff = idx2 - idx1;
@@ -138,10 +148,10 @@ fn solve2(filename: &str) -> u64 {
 
     let final_state = (0..remainder).fold(found_state, |state, _| perform_full_rotation(&state));
 
-    return calculate_load(&final_state);
+    calculate_load(&final_state)
 }
 
-const PUZZLE_FILENAME: &'static str = "./src/puzzle.txt";
+const PUZZLE_FILENAME: &str = "./src/puzzle.txt";
 
 fn main() {
     let start = Instant::now();
@@ -157,7 +167,7 @@ fn main() {
 mod tests {
     use super::*;
 
-    const EXAMPLE_FILENAME: &'static str = "./src/example.txt";
+    const EXAMPLE_FILENAME: &str = "./src/example.txt";
 
     #[test]
     fn test1() {

@@ -1,8 +1,8 @@
 use std::fs;
 use std::time::Instant;
 
-const EXAMPLE_FILENAME: &'static str = "./src/example.txt";
-const PUZZLE_FILENAME: &'static str = "./src/puzzle.txt";
+const EXAMPLE_FILENAME: &str = "./src/example.txt";
+const PUZZLE_FILENAME: &str = "./src/puzzle.txt";
 
 fn solve1(filename: &str) {
     println!("Solving for file: {filename}");
@@ -36,7 +36,7 @@ fn solve2(filename: &str) {
     let lines = input.lines();
     let nr_of_lines = lines.clone().count();
 
-    let mut cards_total = vec![1 as usize; nr_of_lines];
+    let mut cards_total = vec![1; nr_of_lines];
 
     // let mut sum = 0;
 
