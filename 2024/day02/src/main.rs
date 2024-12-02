@@ -7,7 +7,7 @@ fn is_safe(input: &[i32]) -> bool {
 
     input
         .windows(2)
-        .map(|x| (x[0] - x[1]).abs())
+        .map(|x| x[0].abs_diff(x[1]))
         .all(|x| (1..=3).contains(&x))
 }
 
@@ -16,7 +16,7 @@ fn is_safe_with_dampener(input: &[i32]) -> bool {
         return true;
     }
 
-    for skip in 0..input.len() {
+    (0..input.len()).any(|skip| {
         let skipped: Vec<i32> = input
             .iter()
             .enumerate()
@@ -24,12 +24,8 @@ fn is_safe_with_dampener(input: &[i32]) -> bool {
             .map(|(_i, v)| *v)
             .collect();
 
-        if is_safe(&skipped) {
-            return true;
-        }
-    }
-
-    false
+        is_safe(&skipped)
+    })
 }
 
 fn solve1(input: &str) -> u64 {

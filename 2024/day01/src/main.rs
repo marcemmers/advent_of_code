@@ -19,7 +19,7 @@ fn solve1(input: &str) -> u64 {
     list_a
         .iter()
         .zip(list_b.iter())
-        .map(|(a, b)| a.max(b) - a.min(b))
+        .map(|(a, b)| a.abs_diff(*b))
         .sum()
 }
 
