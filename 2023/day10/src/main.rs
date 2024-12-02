@@ -45,6 +45,7 @@ impl Grid {
         self.grid.insert(0, new);
     }
 
+    #[allow(dead_code)]
     fn print(&self) {
         for row in self.grid.iter().rev() {
             println!("{}", row.iter().collect::<String>())

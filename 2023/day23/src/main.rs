@@ -212,7 +212,7 @@ fn solve2(filename: &str) -> u64 {
     println!("Solving for file: {filename}");
     let input = fs::read_to_string(filename).expect("Should have been read");
 
-    let lines = input.lines();
+    let _lines = input.lines();
 
     0
 }
