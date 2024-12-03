@@ -1,3 +1,5 @@
 target/
 **/puzzle.txt
 **/example*.txt
+
+Cargo.lock
