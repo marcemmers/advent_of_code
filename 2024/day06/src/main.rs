@@ -1,75 +1,13 @@
+use grid::{Direction, Grid, Position};
 use std::{collections::HashSet, time::Instant};
 
-#[derive(Clone, Copy)]
-enum Dir {
-    Up,
-    Down,
-    Left,
-    Right,
-}
-
-impl Dir {
-    fn turn_right(&self) -> Self {
-        match self {
-            Dir::Up => Dir::Right,
-            Dir::Down => Dir::Left,
-            Dir::Left => Dir::Up,
-            Dir::Right => Dir::Down,
-        }
+fn get_char(dir: Direction) -> char {
+    match dir {
+        Direction::Up => '^',
+        Direction::Down => 'v',
+        Direction::Left => '<',
+        Direction::Right => '>',
     }
-
-    fn get_char(&self) -> char {
-        match self {
-            Dir::Up => '^',
-            Dir::Down => 'v',
-            Dir::Left => '<',
-            Dir::Right => '>',
-        }
-    }
-}
-
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
-struct Position {
-    x: i32,
-    y: i32,
-}
-
-impl Position {
-    fn step(&self, dir: Dir) -> Self {
-        match dir {
-            Dir::Up => Self {
-                x: self.x,
-                y: self.y - 1,
-            },
-            Dir::Down => Self {
-                x: self.x,
-                y: self.y + 1,
-            },
-            Dir::Left => Self {
-                x: self.x - 1,
-                y: self.y,
-            },
-            Dir::Right => Self {
-                x: self.x + 1,
-                y: self.y,
-            },
-        }
-    }
-}
-
-fn find_start(map: &[Vec<char>]) -> Position {
-    map.iter()
-        .enumerate()
-        .find_map(|(y, line)| {
-            line.iter()
-                .enumerate()
-                .find_map(|(x, ch)| if *ch == '^' { Some(x) } else { None })
-                .map(|x| Position {
-                    x: x as i32,
-                    y: y as i32,
-                })
-        })
-        .expect("Should have some")
 }
 
 #[derive(PartialEq)]
@@ -78,20 +16,17 @@ enum Outcome {
     Loop,
 }
 
-fn set_step(map: &mut [Vec<char>], pos: &mut Position, dir: &mut Dir) -> Option<Outcome> {
+fn set_step(map: &mut Grid, pos: &mut Position, dir: &mut Direction) -> Option<Outcome> {
     let next = pos.step(*dir);
 
-    if let Some(ch) = map
-        .get_mut(next.y as usize)
-        .and_then(|line| line.get_mut(next.x as usize))
-    {
+    if let Some(ch) = map.get_mut(next) {
         if *ch == '#' {
             *dir = dir.turn_right();
-        } else if *ch == dir.get_char() {
+        } else if *ch == get_char(*dir) {
             return Some(Outcome::Loop);
         } else {
             *pos = next;
-            *ch = dir.get_char();
+            *ch = get_char(*dir);
         }
     } else {
         return Some(Outcome::OutOfMap);
@@ -99,7 +34,7 @@ fn set_step(map: &mut [Vec<char>], pos: &mut Position, dir: &mut Dir) -> Option<
     None
 }
 
-fn walk_path(map: &mut [Vec<char>], mut pos: Position, mut dir: Dir) -> Outcome {
+fn walk_path(map: &mut Grid, mut pos: Position, mut dir: Direction) -> Outcome {
     loop {
         if let Some(val) = set_step(map, &mut pos, &mut dir) {
             return val;
@@ -108,32 +43,24 @@ fn walk_path(map: &mut [Vec<char>], mut pos: Position, mut dir: Dir) -> Outcome 
 }
 
 fn solve1(input: &str) -> u64 {
-    let lines = input.lines();
+    let mut map = Grid::from_text(input);
 
-    let mut map: Vec<Vec<char>> = lines.map(|line| line.chars().collect()).collect();
-
-    let pos = find_start(&map);
+    let pos = map.find_one('^').expect("To have start position");
 
     // Start with up direction
-    if walk_path(&mut map, pos, Dir::Up) == Outcome::Loop {
+    if walk_path(&mut map, pos, Direction::Up) == Outcome::Loop {
         return 0;
     }
 
-    map.iter()
-        .map(|line| line.iter().filter(|ch| **ch != '#' && **ch != '.').count() as u64)
-        .sum()
+    map.count_filtered(|ch| ch != '#' && ch != '.') as u64
 }
 
 fn solve2(input: &str) -> u64 {
-    let lines = input.lines();
+    let mut clean_map = Grid::from_text(input);
 
-    let mut clean_map: Vec<Vec<char>> = lines.map(|line| line.chars().collect()).collect();
-    let start = find_start(&clean_map);
+    let start = clean_map.find_one('^').expect("To have start position");
 
-    if let Some(ch) = clean_map
-        .get_mut(start.y as usize)
-        .and_then(|line| line.get_mut(start.x as usize))
-    {
+    if let Some(ch) = clean_map.get_mut(start) {
         *ch = '.';
     }
 
@@ -143,7 +70,7 @@ fn solve2(input: &str) -> u64 {
 
     let mut set: HashSet<Position> = HashSet::new();
 
-    let mut dir = Dir::Up;
+    let mut dir = Direction::Up;
     let mut pos = start;
 
     loop {
@@ -153,14 +80,11 @@ fn solve2(input: &str) -> u64 {
         let mut map = clean_map.clone();
 
         let block = pos.step(dir);
-        if let Some(ch) = map
-            .get_mut(block.y as usize)
-            .and_then(|line| line.get_mut(block.x as usize))
-        {
+        if let Some(ch) = map.get_mut(block) {
             *ch = '#';
         }
 
-        if walk_path(&mut map, start, Dir::Up) == Outcome::Loop {
+        if walk_path(&mut map, start, Direction::Up) == Outcome::Loop {
             set.insert(block);
         }
     }
