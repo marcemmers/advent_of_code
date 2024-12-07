@@ -1,70 +1,48 @@
 use std::time::Instant;
 
+fn count_xmas(input: &[Vec<char>]) -> u64 {
+    input
+        .iter()
+        .map(|line| {
+            line.windows(4)
+                .filter(|chs| *chs == ['X', 'M', 'A', 'S'] || *chs == ['S', 'A', 'M', 'X'])
+                .count() as u64
+        })
+        .sum()
+}
+
 fn solve1(input: &str) -> u64 {
     let lines = input.lines();
 
-    let mut chars: Vec<Vec<char>> = lines.map(|line| line.chars().collect()).collect();
+    let mut puzzle: Vec<Vec<char>> = lines.map(|line| line.chars().collect()).collect();
 
-    let mut sum = chars
-        .iter()
-        .map(|line| {
-            line.windows(4)
-                .filter(|chs| *chs == ['X', 'M', 'A', 'S'] || *chs == ['S', 'A', 'M', 'X'])
-                .count() as u64
-        })
-        .sum();
+    let mut sum = count_xmas(&puzzle);
 
-    for y in 0..(chars.len() - 3) {
-        for x in 0..chars[0].len() {
-            if (chars[y][x] == 'X'
-                && chars[y + 1][x] == 'M'
-                && chars[y + 2][x] == 'A'
-                && chars[y + 3][x] == 'S')
-                || (chars[y][x] == 'S'
-                    && chars[y + 1][x] == 'A'
-                    && chars[y + 2][x] == 'M'
-                    && chars[y + 3][x] == 'X')
-            {
-                sum += 1;
-            }
+    let transposed: Vec<Vec<char>> = (0..puzzle[0].len())
+        .map(|col| (0..puzzle.len()).map(|row| puzzle[row][col]).collect())
+        .collect();
+
+    sum += count_xmas(&transposed);
+
+    let mut diagonal: Vec<Vec<char>> = vec![Vec::new(); puzzle.len() + puzzle[0].len() - 1];
+
+    for y in 0..puzzle.len() {
+        for x in 0..puzzle[0].len() {
+            diagonal[x + y].push(puzzle[y][x]);
         }
     }
+    sum += count_xmas(&diagonal);
 
-    let mut diagonal: Vec<Vec<char>> = vec![Vec::new(); chars.len() + chars[0].len() - 1];
+    let mut diagonal: Vec<Vec<char>> = vec![Vec::new(); puzzle.len() + puzzle[0].len() - 1];
 
-    for y in 0..chars.len() {
-        for x in 0..chars[0].len() {
-            diagonal[x + y].push(chars[y][x]);
+    puzzle.reverse();
+
+    for y in 0..puzzle.len() {
+        for x in 0..puzzle[0].len() {
+            diagonal[x + y].push(puzzle[y][x]);
         }
     }
-
-    sum += diagonal
-        .iter()
-        .map(|line| {
-            line.windows(4)
-                .filter(|chs| *chs == ['X', 'M', 'A', 'S'] || *chs == ['S', 'A', 'M', 'X'])
-                .count() as u64
-        })
-        .sum::<u64>();
-
-    let mut diagonal: Vec<Vec<char>> = vec![Vec::new(); chars.len() + chars[0].len() - 1];
-
-    chars.reverse();
-
-    for y in 0..chars.len() {
-        for x in 0..chars[0].len() {
-            diagonal[x + y].push(chars[y][x]);
-        }
-    }
-
-    sum += diagonal
-        .iter()
-        .map(|line| {
-            line.windows(4)
-                .filter(|chs| *chs == ['X', 'M', 'A', 'S'] || *chs == ['S', 'A', 'M', 'X'])
-                .count() as u64
-        })
-        .sum::<u64>();
+    sum += count_xmas(&diagonal);
 
     sum
 }
@@ -72,19 +50,19 @@ fn solve1(input: &str) -> u64 {
 fn solve2(input: &str) -> u64 {
     let lines = input.lines();
 
-    let mut chars: Vec<Vec<char>> = lines.map(|line| line.chars().collect()).collect();
+    let puzzle: Vec<Vec<char>> = lines.map(|line| line.chars().collect()).collect();
 
     let mut sum = 0;
 
-    for y in 1..(chars.len() - 1) {
-        for x in 1..(chars[0].len() - 1) {
-            if chars[y][x] == 'A'
+    for y in 1..(puzzle.len() - 1) {
+        for x in 1..(puzzle[0].len() - 1) {
+            if puzzle[y][x] == 'A'
                 && matches!(
                     (
-                        chars[y - 1][x - 1],
-                        chars[y + 1][x + 1],
-                        chars[y - 1][x + 1],
-                        chars[y + 1][x - 1],
+                        puzzle[y - 1][x - 1],
+                        puzzle[y + 1][x + 1],
+                        puzzle[y - 1][x + 1],
+                        puzzle[y + 1][x - 1],
                     ),
                     ('M', 'S', 'M', 'S')
                         | ('M', 'S', 'S', 'M')
