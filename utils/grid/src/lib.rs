@@ -1,3 +1,5 @@
+use std::ops::{Add, AddAssign, Sub, SubAssign};
+
 #[derive(Clone, Copy, Debug)]
 pub enum Direction {
     Up,
@@ -53,6 +55,57 @@ impl Position {
             },
         }
     }
+
+    pub fn distance_xy(&self, other: Self) -> Self {
+        Self {
+            x: self.x - other.x,
+            y: self.y - other.y,
+        }
+    }
+}
+
+impl Add<Direction> for Position {
+    type Output = Self;
+
+    fn add(self, rhs: Direction) -> Self::Output {
+        self.step(rhs)
+    }
+}
+
+impl Add for Position {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Self {
+            x: self.x + rhs.x,
+            y: self.y + rhs.y,
+        }
+    }
+}
+
+impl Sub for Position {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        Self {
+            x: self.x - rhs.x,
+            y: self.y - rhs.y,
+        }
+    }
+}
+
+impl AddAssign for Position {
+    fn add_assign(&mut self, rhs: Self) {
+        self.x += rhs.x;
+        self.y += rhs.y;
+    }
+}
+
+impl SubAssign for Position {
+    fn sub_assign(&mut self, rhs: Self) {
+        self.x -= rhs.x;
+        self.y -= rhs.y;
+    }
 }
 
 #[derive(Default, Clone)]
@@ -65,6 +118,10 @@ impl Grid {
         Grid {
             grid: input.lines().map(|line| line.chars().collect()).collect(),
         }
+    }
+
+    pub fn in_bounds(&self, pos: Position) -> bool {
+        self.get(pos).is_some()
     }
 
     pub fn get(&self, pos: Position) -> Option<char> {
@@ -81,6 +138,20 @@ impl Grid {
 
     pub fn height(&self) -> usize {
         self.grid.len()
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = (Position, char)> + '_ {
+        self.grid.iter().enumerate().flat_map(|(y, line)| {
+            line.iter().enumerate().map(move |(x, ch)| {
+                (
+                    Position {
+                        x: x as i32,
+                        y: y as i32,
+                    },
+                    *ch,
+                )
+            })
+        })
     }
 
     pub fn find_one(&self, item: char) -> Option<Position> {
