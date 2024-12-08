@@ -3,5 +3,9 @@ resolver = "2"
 
 members = [
     "2023/day*",
-    "2024/day*", "utils/grid",
+    "2024/day*", "utils/grid", "utils/utils",
 ]
+
+[workspace.dependencies]
+grid = { path = "utils/grid" }
+utils = { path = "utils/utils" }

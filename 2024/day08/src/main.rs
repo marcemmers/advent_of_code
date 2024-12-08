@@ -3,6 +3,7 @@ use std::{
     collections::{HashMap, HashSet},
     time::Instant,
 };
+use utils::permutations;
 
 fn solve1(input: &str) -> u64 {
     let grid = Grid::from_text(input);
@@ -16,14 +17,12 @@ fn solve1(input: &str) -> u64 {
     let mut set: HashSet<Position> = HashSet::new();
 
     map.iter().for_each(|(_, positions)| {
-        positions.iter().enumerate().for_each(|(i, a)| {
-            positions[i + 1..].iter().for_each(|b| {
-                let diff = a.distance_xy(*b);
-                [*a + diff, *b - diff].iter().for_each(|pos| {
-                    if grid.in_bounds(*pos) {
-                        set.insert(*pos);
-                    }
-                });
+        permutations(positions).for_each(|(a, b)| {
+            let diff = a.distance_xy(*b);
+            [*a + diff, *b - diff].iter().for_each(|pos| {
+                if grid.in_bounds(*pos) {
+                    set.insert(*pos);
+                }
             });
         });
     });
@@ -43,20 +42,18 @@ fn solve2(input: &str) -> u64 {
     let mut set: HashSet<Position> = HashSet::new();
 
     map.iter().for_each(|(_, positions)| {
-        positions.iter().enumerate().for_each(|(i, a)| {
-            positions[i + 1..].iter().for_each(|b| {
-                let diff = a.distance_xy(*b);
-                let mut pos = *a;
-                while grid.in_bounds(pos) {
-                    set.insert(pos);
-                    pos += diff;
-                }
-                pos = *b;
-                while grid.in_bounds(pos) {
-                    set.insert(pos);
-                    pos -= diff;
-                }
-            });
+        permutations(positions).for_each(|(a, b)| {
+            let diff = a.distance_xy(*b);
+            let mut pos = *a;
+            while grid.in_bounds(pos) {
+                set.insert(pos);
+                pos += diff;
+            }
+            pos = *b;
+            while grid.in_bounds(pos) {
+                set.insert(pos);
+                pos -= diff;
+            }
         });
     });
 
