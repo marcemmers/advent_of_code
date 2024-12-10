@@ -26,15 +26,14 @@ fn generate_disk(input: &str) -> Vec<Block> {
 }
 
 fn move_all(mut disk: Vec<Block>) -> Vec<Block> {
-    let mut new_disk: Vec<Block> = Vec::new();
+    let mut new_disk: Vec<Block> = Vec::with_capacity(disk.len() * 2);
 
     let mut disk = disk.as_mut_slice();
 
-    while !disk.is_empty() {
-        let block = disk[0].clone();
-        disk = &mut disk[1..];
+    while let Some((block, next)) = disk.split_first_mut() {
+        disk = next;
         match block {
-            Block::File(file_id, size) => new_disk.push(Block::File(file_id, size)),
+            Block::File(file_id, size) => new_disk.push(Block::File(*file_id, *size)),
             Block::Empty(mut empty_size) => loop {
                 match disk.last() {
                     Some(Block::File(file_id, file_size)) => match file_size.cmp(&empty_size) {
@@ -98,21 +97,24 @@ fn solve1(input: &str) -> u64 {
 }
 
 fn defragment(mut disk: Vec<Block>) -> Vec<Block> {
-    let mut new_disk: Vec<Block> = Vec::new();
+    let mut new_disk: Vec<Block> = Vec::with_capacity(disk.len());
 
     while let Some(block) = disk.pop() {
         match block {
             Block::File(file_id, size) => new_disk.push(Block::File(file_id, size)),
             Block::Empty(mut empty_size) => {
-                while let Some((idx, Block::File(file_id, file_size))) =
-                    disk.iter().enumerate().find(|(_, block)| match block {
-                        Block::File(_, file_size) => *file_size <= empty_size,
-                        _ => false,
-                    })
-                {
-                    new_disk.push(Block::File(*file_id, *file_size));
-                    empty_size -= file_size;
-                    disk[idx] = Block::Empty(*file_size);
+                while let Some(block) = disk.iter_mut().find(|block| match block {
+                    Block::File(_, file_size) => *file_size <= empty_size,
+                    _ => false,
+                }) {
+                    new_disk.push(block.clone());
+                    if let Block::File(_, size) = *block {
+                        empty_size -= size;
+                        *block = Block::Empty(size);
+                    }
+                    if empty_size == 0 {
+                        break;
+                    }
                 }
 
                 if empty_size > 0 {
