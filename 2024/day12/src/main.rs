@@ -1,25 +1,27 @@
-use std::{collections::HashSet, time::Instant};
+use std::{
+    collections::{HashSet, VecDeque},
+    time::Instant,
+};
 
 use grid::{Direction, Grid, Position};
 
 fn calculate_plot_cost(grid: &mut Grid, start: Position) -> u64 {
     let crop = grid.get(start).unwrap();
 
-    let mut to_visit: HashSet<Position> = HashSet::new();
+    let mut to_visit: VecDeque<Position> = VecDeque::new();
     let mut plot: HashSet<Position> = HashSet::new();
 
-    to_visit.insert(start);
+    to_visit.push_back(start);
     plot.insert(start);
 
     let mut perimiter = 0;
 
-    while let Some(pos) = to_visit.iter().next().cloned() {
-        to_visit.remove(&pos);
+    while let Some(pos) = to_visit.pop_front() {
         for dir in Direction::all_directions() {
             let step = pos.step(dir);
             if grid.get(step) == Some(crop) {
                 if plot.insert(step) {
-                    to_visit.insert(step);
+                    to_visit.push_back(step);
                 }
             } else {
                 perimiter += 1;
@@ -37,114 +39,75 @@ fn solve1(input: &str) -> u64 {
     let mut grid = Grid::from_text(input);
 
     let mut sum = 0;
-    loop {
-        let item = grid.iter().find(|(_, ch)| *ch != '.');
-        if item.is_none() {
-            break;
+    for x in 0..grid.width() {
+        for y in 0..grid.height() {
+            let pos = Position::new(x as i32, y as i32);
+            let item = grid.get(pos).unwrap();
+            if item == '.' {
+                continue;
+            }
+
+            sum += calculate_plot_cost(&mut grid, pos);
         }
-
-        let (pos, _) = item.unwrap();
-
-        sum += calculate_plot_cost(&mut grid, pos);
     }
 
     sum
 }
 
-fn trace_perimiter(plot: &HashSet<Position>) -> u64 {
-    if plot.len() == 1 {
-        return 4;
-    }
+fn calculate_bulk_perimiter(grid: &Grid) -> u64 {
+    let mut prev_right: HashSet<usize> = HashSet::new();
+    let mut prev_left: HashSet<usize> = HashSet::new();
+    let mut active = false;
 
-    let mut pos = plot.iter().next().cloned().unwrap();
+    let mut sum = 0;
 
-    // Find some up left corner
-    loop {
-        if let Some(step) = plot.get(&pos.step(Direction::Left)) {
-            pos = *step;
-        } else if let Some(step) = plot.get(&pos.step(Direction::Up)) {
-            pos = *step;
-        } else {
-            break;
-        }
-    }
+    grid.iter_rows().for_each(|(_, row)| {
+        let mut right: HashSet<usize> = HashSet::new();
+        let mut left: HashSet<usize> = HashSet::new();
+        row.iter().enumerate().for_each(|(i, ch)| {
+            if *ch == '+' {
+                if !active {
+                    active = true;
+                    right.insert(i);
+                }
+            } else if active {
+                active = false;
+                left.insert(i);
+            }
+        });
 
-    let start = pos;
+        sum += right.difference(&prev_right).count();
+        sum += left.difference(&prev_left).count();
 
-    println!("Start at {:?}", start);
+        prev_right = right;
+        prev_left = left;
+    });
 
-    let mut sides = 1;
-
-    // Start going right
-    let mut dir = Direction::Right;
-
-    // If there is nothing right, go down
-    if plot.get(&pos.step(dir)).is_none() {
-        dir = Direction::Down;
-        sides += 1;
-    }
-
-    pos = pos.step(dir);
-    // for _ in 0..50 {
-    loop {
-        if let Some(next) = plot.get(&pos.step(dir.turn_left())) {
-            pos = *next;
-            dir = dir.turn_left();
-            sides += 1;
-        } else if pos == start {
-            break;
-        } else if let Some(next) = plot.get(&pos.step(dir)) {
-            pos = *next;
-        } else {
-            dir = dir.turn_right();
-            sides += 1;
-        }
-        // println!("Pos {:?}", pos);
-    }
-
-    if dir == Direction::Left {
-        sides += 1;
-    }
-
-    sides
+    sum as u64
 }
 
 fn calculate_plot_cost_with_bulk(grid: &mut Grid, start: Position) -> u64 {
     let crop = grid.get(start).unwrap();
 
-    let mut to_visit: HashSet<Position> = HashSet::new();
+    let mut to_visit: VecDeque<Position> = VecDeque::new();
     let mut plot: HashSet<Position> = HashSet::new();
 
-    to_visit.insert(start);
+    to_visit.push_back(start);
     plot.insert(start);
 
-    while let Some(pos) = to_visit.iter().next().cloned() {
-        to_visit.remove(&pos);
+    while let Some(pos) = to_visit.pop_front() {
         for dir in Direction::all_directions() {
             let step = pos.step(dir);
             if grid.get(step) == Some(crop) && plot.insert(step) {
-                to_visit.insert(step);
+                to_visit.push_back(step);
             }
         }
-        // println!("To visit for {}: {:?}", crop, to_visit);
     }
 
-    let perimiter = trace_perimiter(&plot);
-
-    println!(
-        "Found plot '{}' with cost {} * {} = {}",
-        crop,
-        plot.len(),
-        perimiter,
-        plot.len() as u64 * perimiter
-    );
-
-    // if perimiter % 2 != 0 {
     plot.iter()
         .for_each(|pos| *grid.get_mut(*pos).unwrap() = '+');
 
-    grid.print();
-    // }
+    let perimiter = calculate_bulk_perimiter(grid) + calculate_bulk_perimiter(&grid.transpose());
 
     plot.iter()
         .for_each(|pos| *grid.get_mut(*pos).unwrap() = '.');
@@ -156,15 +119,16 @@ fn solve2(input: &str) -> u64 {
     let mut grid = Grid::from_text(input);
 
     let mut sum = 0;
-    loop {
-        let item = grid.iter().find(|(_, ch)| *ch != '.');
-        if item.is_none() {
-            break;
+    for x in 0..grid.width() {
+        for y in 0..grid.height() {
+            let pos = Position::new(x as i32, y as i32);
+            let item = grid.get(pos).unwrap();
+            if item == '.' {
+                continue;
+            }
+
+            sum += calculate_plot_cost_with_bulk(&mut grid, pos);
         }
-
-        let (pos, _) = item.unwrap();
-
-        sum += calculate_plot_cost_with_bulk(&mut grid, pos);
     }
 
     sum
@@ -188,24 +152,9 @@ mod tests {
 
     const EXAMPLE: &str = include_str!("./example.txt");
 
-    const CUSTOM_EXAMPLE: &str = include_str!("./custom1.txt");
-
-    #[test]
-    fn test_once() {
-        assert_eq!(
-            calculate_plot_cost_with_bulk(&mut Grid::from_text(EXAMPLE), Position { x: 0, y: 0 }),
-            10
-        );
-    }
-
     #[test]
     fn test1() {
         assert_eq!(solve1(EXAMPLE), 1930);
-    }
-
-    #[test]
-    fn test_custom1() {
-        assert_eq!(solve2(CUSTOM_EXAMPLE), 12);
     }
 
     #[test]

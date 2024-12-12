@@ -44,6 +44,10 @@ pub struct Position {
 }
 
 impl Position {
+    pub fn new(x: i32, y: i32) -> Self {
+        Self { x, y }
+    }
+
     pub fn step(&self, direction: Direction) -> Self {
         match direction {
             Direction::Up => Self {
@@ -204,5 +208,17 @@ impl Grid {
                 .filter(|ch| **ch == from)
                 .for_each(|ch| *ch = to);
         });
+    }
+
+    pub fn transpose(&self) -> Self {
+        Self {
+            grid: (0..self.grid[0].len())
+                .map(|col| {
+                    (0..self.grid.len())
+                        .map(|row| self.grid[row][col])
+                        .collect()
+                })
+                .collect(),
+        }
     }
 }
