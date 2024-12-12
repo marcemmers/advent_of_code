@@ -1,6 +1,6 @@
 use std::ops::{Add, AddAssign, Sub, SubAssign};
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Direction {
     Up,
     Down,
@@ -25,6 +25,15 @@ impl Direction {
             Direction::Left => Direction::Down,
             Direction::Right => Direction::Up,
         }
+    }
+
+    pub fn all_directions() -> [Self; 4] {
+        [
+            Direction::Up,
+            Direction::Down,
+            Direction::Left,
+            Direction::Right,
+        ]
     }
 }
 
@@ -154,6 +163,13 @@ impl Grid {
         })
     }
 
+    pub fn iter_rows(&self) -> impl Iterator<Item = (usize, &[char])> + '_ {
+        self.grid
+            .iter()
+            .enumerate()
+            .map(|(i, row)| (i, row.as_slice()))
+    }
+
     pub fn find_one(&self, item: char) -> Option<Position> {
         self.grid.iter().enumerate().find_map(|(y, line)| {
             line.iter()
@@ -180,5 +196,13 @@ impl Grid {
         self.grid
             .iter()
             .for_each(|line| println!("{}", line.iter().collect::<String>()))
+    }
+
+    pub fn replace_all(&mut self, from: char, to: char) {
+        self.grid.iter_mut().for_each(|line| {
+            line.iter_mut()
+                .filter(|ch| **ch == from)
+                .for_each(|ch| *ch = to);
+        });
     }
 }
