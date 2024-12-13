@@ -1,5 +1,7 @@
 use std::time::Instant;
 
+use utils::gaussian_elimination_int;
+
 fn get_x_y(input: &str) -> (i64, i64) {
     let (input, y) = input.split_once('Y').unwrap();
     let (_, x) = input.split_once('X').unwrap();
@@ -18,14 +20,15 @@ fn solve_game(input: &str, offset: u64) -> u64 {
     loc_x += offset as i64;
     loc_y += offset as i64;
 
-    let a = ((b_x * loc_y) - (b_y * loc_x)) / (b_x * a_y - b_y * a_x);
-    let b = ((a_x * loc_y) - (a_y * loc_x)) / (a_x * b_y - a_y * b_x);
+    let matrix = vec![vec![a_x, b_x, loc_x], vec![a_y, b_y, loc_y]];
 
-    if a_x * a + b_x * b != loc_x || a_y * a + b_y * b != loc_y {
-        return 0;
+    let result = gaussian_elimination_int(&matrix);
+
+    if let Some(result) = result {
+        result[0] as u64 * 3 + result[1] as u64
+    } else {
+        0
     }
-
-    a as u64 * 3 + b as u64
 }
 
 fn solve1(input: &str) -> u64 {

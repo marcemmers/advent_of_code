@@ -87,12 +87,116 @@ pub fn prime_factors(mut n: u64) -> HashMap<u64, u64> {
     map
 }
 
+pub fn f64_equal(a: f64, b: f64) -> bool {
+    (a - b).abs() < 0.0001f64
+}
+
+pub fn f64_is_integer(val: f64) -> bool {
+    f64_equal(val, val.round())
+}
+
+/// Used to solve linear equations and finds the factors to solve it
+///
+/// # Example
+///
+/// ```
+/// use utils::gaussian_elimination;
+///
+/// let input = vec![vec![ 2f64,  1f64, -1f64,   8f64],
+///                  vec![-3f64, -1f64,  2f64, -11f64],
+///                  vec![-2f64,  1f64,  2f64,  -3f64]];
+/// let result = gaussian_elimination(&input);
+/// assert_eq!(result.iter().map(|f| f.round()).collect::<Vec<_>>(), [2f64, 3f64, -1f64]);
+/// ```
+pub fn gaussian_elimination(matrix: &[Vec<f64>]) -> Vec<f64> {
+    let mut matrix: Vec<Vec<_>> = matrix.iter().map(|row| row.to_vec()).collect();
+
+    assert_ne!(matrix.len(), 0);
+    assert_ne!(matrix[0].len(), 0);
+    let m = matrix.len();
+    let n = matrix[0].len();
+    assert_eq!(m, n - 1);
+
+    let mut h = 0;
+    let mut k = 0;
+
+    while h < m && k < n {
+        let i_max = (h..m)
+            .map(|i| (i, matrix[i][k].abs()))
+            .max_by(|(_, a), (_, b)| a.total_cmp(b))
+            .map(|(i, _)| i)
+            .unwrap();
+
+        if matrix[i_max][k] == 0f64 {
+            k += 1;
+        } else {
+            let copy = matrix[i_max].clone();
+            matrix[i_max] = matrix[h].clone();
+            matrix[h] = copy;
+
+            for i in (h + 1)..m {
+                let f = matrix[i][k] / matrix[h][k];
+                matrix[i][k] = 0f64;
+                for j in (k + 1)..n {
+                    matrix[i][j] -= matrix[h][j] * f;
+                }
+            }
+            h += 1;
+            k += 1;
+        }
+    }
+
+    for i in (1..m).rev() {
+        if matrix[i][i] != 0f64 {
+            for j in (0..i).rev() {
+                let f = matrix[j][i] / matrix[i][i];
+                for k in (0..n).rev() {
+                    matrix[j][k] -= f * matrix[i][k];
+                }
+            }
+        }
+    }
+
+    (0..m).map(|i| matrix[i][m] / matrix[i][i]).collect()
+}
+
+/// Used to solve linear equations and finds the factors to solve it, converts to integers and return None if the conversion failed
+///
+/// # Example
+///
+/// ```
+/// use utils::gaussian_elimination_int;
+///
+/// let input = vec![vec![ 2, 4, 8],
+///                  vec![ 4, 2, 10]];
+/// let result = gaussian_elimination_int(&input);
+/// assert_eq!(result, Some(vec![2, 1]));
+///
+/// let input = vec![vec![ 2, 3, 8],
+///                  vec![ 3, 3, 8]];
+/// let result = gaussian_elimination_int(&input);
+/// assert_eq!(result, None);
+/// ```
+pub fn gaussian_elimination_int(matrix: &[Vec<i64>]) -> Option<Vec<i64>> {
+    let matrix: Vec<Vec<_>> = matrix
+        .iter()
+        .map(|row| row.iter().map(|v| *v as f64).collect())
+        .collect();
+    let result = gaussian_elimination(&matrix);
+
+    if result.iter().all(|f| f64_is_integer(*f)) {
+        Some(result.iter().map(|f| f.round() as i64).collect())
+    } else {
+        None
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn test1() {
+    fn test_prime_factors() {
         assert_eq!(
             prime_factors(214154151512),
             [(2, 3), (7, 2), (2333, 1), (234167, 1)]
