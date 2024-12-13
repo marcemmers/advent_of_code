@@ -3,6 +3,8 @@ use std::fs;
 use std::str::{Chars, Lines};
 use std::time::Instant;
 
+use utils::least_common_multiple;
+
 const PUZZLE_FILENAME: &str = "./src/puzzle.txt";
 
 fn calculate_steps(
@@ -10,7 +12,7 @@ fn calculate_steps(
     directions: Chars,
     start: String,
     end: fn(&String) -> bool,
-) -> usize {
+) -> u64 {
     let mut pos = start;
     let step = |cur_pos: &String, dir: char| -> String {
         let item = map.get(cur_pos.as_str()).unwrap();
@@ -29,26 +31,7 @@ fn calculate_steps(
         })
         .count();
 
-    steps + 1
-}
-
-fn lcm(first: usize, second: usize) -> usize {
-    first * second / gcd(first, second)
-}
-
-fn gcd(first: usize, second: usize) -> usize {
-    let mut max = first.max(second);
-    let mut min = first.min(second);
-
-    loop {
-        let res = max % min;
-        if res == 0 {
-            return min;
-        }
-
-        max = min;
-        min = res;
-    }
+    steps as u64 + 1
 }
 
 fn generate_map(lines: Lines) -> HashMap<String, (String, String)> {
@@ -100,7 +83,7 @@ fn solve2(filename: &str) -> u64 {
         })
     });
 
-    let steps = results.fold(1usize, lcm);
+    let steps = results.fold(1, least_common_multiple);
 
     // println!("Map: {:?}", map);
     println!("Steps: {steps}");
