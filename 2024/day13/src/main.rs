@@ -8,41 +8,24 @@ fn get_x_y(input: &str) -> (i64, i64) {
     (x[1..].parse().unwrap(), y[1..].parse().unwrap())
 }
 
-fn solve_game(input: &str, offset: i64) -> u64 {
+fn solve_game(input: &str, offset: u64) -> u64 {
     let mut lines = input.lines();
 
     let (a_x, a_y) = get_x_y(lines.next().unwrap());
     let (b_x, b_y) = get_x_y(lines.next().unwrap());
     let (mut loc_x, mut loc_y) = get_x_y(lines.next().unwrap());
 
-    loc_x += offset;
-    loc_y += offset;
+    loc_x += offset as i64;
+    loc_y += offset as i64;
 
-    let mut presses_a = 0;
-    let mut sum = u64::MAX;
+    let a = ((b_x * loc_y) - (b_y * loc_x)) / (b_x * a_y - b_y * a_x);
+    let b = ((a_x * loc_y) - (a_y * loc_x)) / (a_x * b_y - a_y * b_x);
 
-    while loc_x >= 0 && loc_y >= 0 {
-        if loc_x % b_x == 0 && loc_y % b_y == 0 {
-            let presses_b = loc_x / b_x;
-
-            if presses_b * b_y == loc_y {
-                let new = presses_a as u64 * 3 + presses_b as u64;
-                if new < sum {
-                    sum = new;
-                }
-            }
-        }
-
-        loc_x -= a_x;
-        loc_y -= a_y;
-        presses_a += 1;
-    }
-
-    if sum == u64::MAX {
+    if a_x * a + b_x * b != loc_x || a_y * a + b_y * b != loc_y {
         return 0;
     }
 
-    sum
+    a as u64 * 3 + b as u64
 }
 
 fn solve1(input: &str) -> u64 {
