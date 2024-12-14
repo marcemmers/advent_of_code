@@ -127,6 +127,12 @@ pub struct Grid {
 }
 
 impl Grid {
+    pub fn new(width: usize, height: usize, start: char) -> Self {
+        Self {
+            grid: vec![vec![start; width]; height],
+        }
+    }
+
     pub fn from_text(input: &str) -> Self {
         Grid {
             grid: input.lines().map(|line| line.chars().collect()).collect(),
