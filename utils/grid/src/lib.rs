@@ -1,3 +1,4 @@
+use core::panic;
 use std::ops::{Add, AddAssign, Sub, SubAssign};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -9,6 +10,16 @@ pub enum Direction {
 }
 
 impl Direction {
+    pub fn from_char(ch: char) -> Self {
+        match ch {
+            '>' => Direction::Right,
+            '<' => Direction::Left,
+            '^' => Direction::Up,
+            'v' => Direction::Down,
+            _ => panic!("Parsing failed"),
+        }
+    }
+
     pub fn turn_right(&self) -> Self {
         match self {
             Direction::Up => Direction::Right,
@@ -24,6 +35,15 @@ impl Direction {
             Direction::Down => Direction::Right,
             Direction::Left => Direction::Down,
             Direction::Right => Direction::Up,
+        }
+    }
+
+    pub fn reverse(&self) -> Self {
+        match self {
+            Direction::Up => Direction::Down,
+            Direction::Down => Direction::Up,
+            Direction::Left => Direction::Right,
+            Direction::Right => Direction::Left,
         }
     }
 
@@ -127,6 +147,12 @@ pub struct Grid {
 }
 
 impl Grid {
+    pub fn with_capacity(width: usize, height: usize) -> Self {
+        Self {
+            grid: vec![Vec::with_capacity(width); height],
+        }
+    }
+
     pub fn new(width: usize, height: usize, start: char) -> Self {
         Self {
             grid: vec![vec![start; width]; height],
@@ -149,6 +175,10 @@ impl Grid {
 
     pub fn get_mut(&mut self, pos: Position) -> Option<&mut char> {
         self.grid.get_mut(pos.y as usize)?.get_mut(pos.x as usize)
+    }
+
+    pub fn get_mut_row(&mut self, row: i32) -> &mut Vec<char> {
+        &mut self.grid[row as usize]
     }
 
     pub fn width(&self) -> usize {
@@ -178,6 +208,10 @@ impl Grid {
             .iter()
             .enumerate()
             .map(|(i, row)| (i, row.as_slice()))
+    }
+
+    pub fn iter_rows_mut(&mut self) -> impl Iterator<Item = (usize, &mut Vec<char>)> + '_ {
+        self.grid.iter_mut().enumerate()
     }
 
     pub fn find_one(&self, item: char) -> Option<Position> {
