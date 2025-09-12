@@ -1,70 +1,80 @@
-use std::collections::{HashMap, VecDeque};
+use std::collections::{BinaryHeap, HashMap};
 
 use grid::{Direction, Grid, Position};
 
-pub struct AStar {
-    grid: Grid,
-    start: Position,
-    goal: Position,
+#[derive(Eq, PartialEq, Debug)]
+struct OpenPosition {
+    pos: Position,
+    g_score: i32,
+    f_score: i32,
 }
 
-impl AStar {
-    pub fn new(grid: Grid, start: Position, goal: Position) -> Self {
-        Self { grid, start, goal }
+impl PartialOrd for OpenPosition {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
     }
+}
 
-    pub fn calculate_path(
-        &mut self,
-        is_allowed: impl Fn(&Grid, Position, Position) -> bool,
-    ) -> Vec<Position> {
-        let grid_positions = self.grid.height() * self.grid.width();
+impl Ord for OpenPosition {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        other.f_score.cmp(&self.f_score)
+    }
+}
 
-        let mut open_set = VecDeque::with_capacity(grid_positions);
-        let mut came_from = HashMap::with_capacity(grid_positions);
-        let mut g_score = HashMap::with_capacity(grid_positions);
-        let mut f_score = HashMap::with_capacity(grid_positions);
+pub fn calculate_path(
+    grid: &Grid,
+    start: Position,
+    goal: Position,
+    is_allowed: impl Fn(&Grid, Position, Position) -> bool,
+) -> Option<Vec<Position>> {
+    let grid_positions = grid.height() * grid.width();
 
-        let start_f_score = self.h(self.start);
-        open_set.push_front((self.start, start_f_score));
-        g_score.insert(self.start, 0);
-        f_score.insert(self.start, start_f_score);
+    let mut open_list = BinaryHeap::with_capacity(grid_positions);
+    let mut came_from = HashMap::with_capacity(grid_positions);
+    let mut closed_list = HashMap::with_capacity(grid_positions);
 
-        while let Some((current, _)) = open_set.pop_front() {
-            if current == self.goal {
-                return reconstruct_path(&came_from, current);
-            }
+    open_list.push(OpenPosition {
+        pos: start,
+        g_score: 0,
+        f_score: h(goal, start),
+    });
 
-            for dir in Direction::all_directions() {
-                let neighbor = current + dir;
-                if !is_allowed(&self.grid, current, neighbor) {
-                    continue;
-                }
-                let tentative = g_score.get(&current).unwrap() + 1;
-                if tentative < *g_score.entry(neighbor).or_insert(i32::MAX) {
-                    came_from.entry(neighbor).insert_entry(current);
-                    g_score.entry(neighbor).insert_entry(tentative);
-                    let f_score_value = tentative + self.h(neighbor);
-                    f_score.entry(neighbor).insert_entry(f_score_value);
-                    if !open_set.iter().any(|(pos, _)| *pos == neighbor) {
-                        if let Some(pos) = open_set
-                            .iter()
-                            .position(|(_, score)| f_score_value < *score)
-                        {
-                            open_set.insert(pos, (neighbor, f_score_value));
-                        } else {
-                            open_set.push_back((neighbor, f_score_value));
-                        }
-                    }
-                }
-            }
+    while let Some(current) = open_list.pop() {
+        if current.pos == goal {
+            return Some(reconstruct_path(&came_from, current.pos));
         }
-        Vec::new()
-    }
 
-    fn h(&self, pos: Position) -> i32 {
-        let distance = self.goal.distance_xy(pos);
-        distance.x + distance.y
+        closed_list.insert(current.pos, current.g_score);
+
+        for dir in Direction::all_directions() {
+            let neighbor = current.pos + dir;
+            if !is_allowed(grid, current.pos, neighbor)
+                || open_list.iter().any(|x| x.pos == neighbor)
+            {
+                continue;
+            }
+
+            let tentative = current.g_score + 1;
+            if let Some(g_score) = closed_list.get(&neighbor)
+                && tentative >= *g_score
+            {
+                continue;
+            }
+
+            came_from.insert(neighbor, current.pos);
+            open_list.push(OpenPosition {
+                pos: neighbor,
+                g_score: tentative,
+                f_score: tentative + h(goal, neighbor),
+            });
+        }
     }
+    None
+}
+
+fn h(goal: Position, pos: Position) -> i32 {
+    let distance = goal.distance_xy(pos);
+    distance.x.abs() + distance.y.abs()
 }
 
 fn reconstruct_path(
@@ -79,4 +89,68 @@ fn reconstruct_path(
     }
     path.reverse();
     path
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn simple() {
+        let grid = r"
+S....
+x..x.
+xxxx.
+....E
+";
+        let grid = Grid::from_text(grid.trim());
+
+        let path = calculate_path(
+            &grid,
+            grid.find_one('S').unwrap(),
+            grid.find_one('E').unwrap(),
+            |grid, _, pos| matches!(grid.get(pos), Some('.') | Some('E')),
+        );
+
+        assert_eq!(path.unwrap().len(), 8);
+    }
+
+    #[test]
+    fn going_up() {
+        let grid = r"
+.....
+.xxx.
+Sx.x.
+...xE
+";
+        let grid = Grid::from_text(grid.trim());
+
+        let path = calculate_path(
+            &grid,
+            grid.find_one('S').unwrap(),
+            grid.find_one('E').unwrap(),
+            |grid, _, pos| matches!(grid.get(pos), Some('.') | Some('E')),
+        );
+
+        assert_eq!(path.unwrap().len(), 10);
+    }
+
+    #[test]
+    fn straight_line() {
+        let grid = r"
+S..x..x......
+.............
+...x.....x..E
+";
+        let grid = Grid::from_text(grid.trim());
+
+        let path = calculate_path(
+            &grid,
+            grid.find_one('S').unwrap(),
+            grid.find_one('E').unwrap(),
+            |grid, _, pos| matches!(grid.get(pos), Some('.') | Some('E')),
+        );
+
+        assert_eq!(path.unwrap().len(), 15);
+    }
 }
