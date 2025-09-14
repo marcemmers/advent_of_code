@@ -1,7 +1,0 @@
-[package]
-name = "bfs"
-version = "0.1.0"
-edition = "2024"
-
-[dependencies]
-grid.workspace = true

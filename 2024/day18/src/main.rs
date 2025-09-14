@@ -1,6 +1,6 @@
 use std::time::Instant;
 
-use bfs::bfs_search;
+use grid::bfs::bfs_search;
 use grid::{Grid, Position};
 
 const EMPTY: char = '.';

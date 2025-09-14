@@ -1,3 +1,6 @@
+pub mod astar;
+pub mod bfs;
+
 use core::panic;
 use std::ops::{Add, AddAssign, Sub, SubAssign};
 

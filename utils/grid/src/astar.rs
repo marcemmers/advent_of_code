@@ -1,6 +1,6 @@
 use std::collections::{BinaryHeap, HashMap};
 
-use grid::{Direction, Grid, Position};
+use crate::{Direction, Grid, Position};
 
 #[derive(Eq, PartialEq, Debug)]
 struct OpenPosition {

@@ -1,6 +1,6 @@
 use std::collections::{HashSet, VecDeque};
 
-use grid::{Direction, Grid, Position};
+use crate::{Direction, Grid, Position};
 
 pub fn bfs_search(
     grid: &Grid,
