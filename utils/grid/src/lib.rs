@@ -89,11 +89,23 @@ impl Position {
         }
     }
 
-    pub fn distance_xy(&self, other: Self) -> Self {
-        Self {
+    pub fn distance_xy(&self, other: Self) -> Distance {
+        Distance {
             x: self.x - other.x,
             y: self.y - other.y,
         }
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+pub struct Distance {
+    pub x: i32,
+    pub y: i32,
+}
+
+impl Distance {
+    pub fn new(x: i32, y: i32) -> Self {
+        Self { x, y }
     }
 }
 
@@ -105,10 +117,10 @@ impl Add<Direction> for Position {
     }
 }
 
-impl Add for Position {
+impl Add<Distance> for Position {
     type Output = Self;
 
-    fn add(self, rhs: Self) -> Self::Output {
+    fn add(self, rhs: Distance) -> Self::Output {
         Self {
             x: self.x + rhs.x,
             y: self.y + rhs.y,
@@ -117,9 +129,20 @@ impl Add for Position {
 }
 
 impl Sub for Position {
-    type Output = Self;
+    type Output = Distance;
 
     fn sub(self, rhs: Self) -> Self::Output {
+        Self::Output {
+            x: self.x - rhs.x,
+            y: self.y - rhs.y,
+        }
+    }
+}
+
+impl Sub<Distance> for Position {
+    type Output = Self;
+
+    fn sub(self, rhs: Distance) -> Self::Output {
         Self {
             x: self.x - rhs.x,
             y: self.y - rhs.y,
@@ -127,102 +150,129 @@ impl Sub for Position {
     }
 }
 
-impl AddAssign for Position {
-    fn add_assign(&mut self, rhs: Self) {
+impl AddAssign<Distance> for Position {
+    fn add_assign(&mut self, rhs: Distance) {
         self.x += rhs.x;
         self.y += rhs.y;
     }
 }
 
-impl SubAssign for Position {
-    fn sub_assign(&mut self, rhs: Self) {
+impl SubAssign<Distance> for Position {
+    fn sub_assign(&mut self, rhs: Distance) {
         self.x -= rhs.x;
         self.y -= rhs.y;
     }
 }
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Debug, PartialEq)]
 pub struct Grid {
-    grid: Vec<Vec<char>>,
+    grid: Vec<char>,
+    width: usize,
+    height: usize,
 }
 
 impl Grid {
     pub fn with_capacity(width: usize, height: usize) -> Self {
         Self {
-            grid: vec![Vec::with_capacity(width); height],
+            grid: Vec::with_capacity(width * height),
+            width,
+            height,
         }
     }
 
     pub fn new(width: usize, height: usize, start: char) -> Self {
         Self {
-            grid: vec![vec![start; width]; height],
+            grid: vec![start; width * height],
+            width,
+            height,
         }
     }
 
     pub fn from_text(input: &str) -> Self {
+        let mut grid = Vec::with_capacity(input.len()); // Not exact but good estimation
+
+        let width = input.lines().next().unwrap().len();
+        let mut height = 0;
+
+        for line in input.lines() {
+            let mut row: Vec<char> = line.chars().collect();
+            if width != row.len() {
+                panic!("Row widths should match");
+            }
+            grid.append(&mut row);
+            height += 1;
+        }
+
         Grid {
-            grid: input.lines().map(|line| line.chars().collect()).collect(),
+            grid,
+            width,
+            height,
         }
     }
 
     pub fn in_bounds(&self, pos: Position) -> bool {
-        self.get(pos).is_some()
+        pos.x >= 0 && pos.x < self.width as i32 && pos.y >= 0 && pos.y < self.height as i32
     }
 
     pub fn get(&self, pos: Position) -> Option<char> {
-        self.grid.get(pos.y as usize)?.get(pos.x as usize).copied()
+        if !self.in_bounds(pos) {
+            return None;
+        }
+        self.grid
+            .get(pos.y as usize * self.width + pos.x as usize)
+            .copied()
     }
 
     pub fn get_mut(&mut self, pos: Position) -> Option<&mut char> {
-        self.grid.get_mut(pos.y as usize)?.get_mut(pos.x as usize)
+        if !self.in_bounds(pos) {
+            return None;
+        }
+        self.grid
+            .get_mut(pos.y as usize * self.width + pos.x as usize)
     }
 
-    pub fn get_mut_row(&mut self, row: i32) -> &mut Vec<char> {
-        &mut self.grid[row as usize]
+    pub fn get_mut_row(&mut self, row: i32) -> &mut [char] {
+        &mut self.grid[(row as usize * self.width)..((row as usize + 1) * self.width)]
     }
 
     pub fn width(&self) -> usize {
-        self.grid[0].len()
+        self.width
     }
 
     pub fn height(&self) -> usize {
-        self.grid.len()
+        self.height
     }
 
     pub fn iter(&self) -> impl Iterator<Item = (Position, char)> + '_ {
-        self.grid.iter().enumerate().flat_map(|(y, line)| {
-            line.iter().enumerate().map(move |(x, ch)| {
-                (
-                    Position {
-                        x: x as i32,
-                        y: y as i32,
-                    },
-                    *ch,
-                )
-            })
+        self.grid.iter().enumerate().map(|(i, ch)| {
+            (
+                Position {
+                    x: (i % self.width) as i32,
+                    y: (i / self.width) as i32,
+                },
+                *ch,
+            )
         })
     }
 
     pub fn iter_rows(&self) -> impl Iterator<Item = (usize, &[char])> + '_ {
-        self.grid
-            .iter()
-            .enumerate()
-            .map(|(i, row)| (i, row.as_slice()))
+        self.grid.chunks(self.width).enumerate()
     }
 
-    pub fn iter_rows_mut(&mut self) -> impl Iterator<Item = (usize, &mut Vec<char>)> + '_ {
-        self.grid.iter_mut().enumerate()
+    pub fn iter_rows_mut(&mut self) -> impl Iterator<Item = (usize, &mut [char])> + '_ {
+        self.grid.chunks_mut(self.width).enumerate()
     }
 
     pub fn find_one(&self, item: char) -> Option<Position> {
-        self.grid.iter().enumerate().find_map(|(y, line)| {
-            line.iter()
-                .enumerate()
-                .find_map(|(x, ch)| if *ch == item { Some(x) } else { None })
-                .map(|x| Position {
-                    x: x as i32,
-                    y: y as i32,
+        self.grid.iter().enumerate().find_map(|(i, ch)| {
+            if *ch == item {
+                Some(Position {
+                    x: (i % self.width) as i32,
+                    y: (i / self.width) as i32,
                 })
+            } else {
+                None
+            }
         })
     }
 
@@ -230,35 +280,59 @@ impl Grid {
     where
         F: Fn(char) -> bool,
     {
-        self.grid
-            .iter()
-            .map(|line| line.iter().filter(|ch| filter(**ch)).count())
-            .sum()
+        self.grid.iter().filter(|ch| filter(**ch)).count()
     }
 
     pub fn print(&self) {
         self.grid
-            .iter()
+            .chunks(self.width)
             .for_each(|line| println!("{}", line.iter().collect::<String>()))
     }
 
     pub fn replace_all(&mut self, from: char, to: char) {
-        self.grid.iter_mut().for_each(|line| {
-            line.iter_mut()
-                .filter(|ch| **ch == from)
-                .for_each(|ch| *ch = to);
-        });
+        self.grid
+            .iter_mut()
+            .filter(|ch| **ch == from)
+            .for_each(|ch| *ch = to);
     }
 
     pub fn transpose(&self) -> Self {
-        Self {
-            grid: (0..self.grid[0].len())
-                .map(|col| {
-                    (0..self.grid.len())
-                        .map(|row| self.grid[row][col])
-                        .collect()
-                })
-                .collect(),
+        let mut grid = Vec::with_capacity(self.grid.len());
+        for x in 0..self.width {
+            for y in 0..self.height {
+                let pos = y * self.width + x;
+                grid.push(*self.grid.get(pos).unwrap());
+            }
         }
+        Self {
+            grid,
+            width: self.height,
+            height: self.width,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn transpose() {
+        let grid1 = r"
+11115
+22226
+33337
+";
+
+        let grid2 = r"
+123
+123
+123
+123
+567
+";
+        let grid1 = Grid::from_text(grid1.trim());
+        let grid2 = Grid::from_text(grid2.trim());
+        assert_eq!(grid1.transpose(), grid2);
     }
 }
