@@ -1,6 +1,6 @@
 use std::time::Instant;
 
-use astar::calculate_path;
+use bfs::bfs_search;
 use grid::{Grid, Position};
 
 const EMPTY: char = '.';
@@ -16,48 +16,56 @@ fn parse_input(input: &str) -> Vec<Position> {
 }
 
 fn solve1(input: &str, mut grid: Grid, steps: usize) -> u64 {
-    let positions = parse_input(input);
+    let lines = input.lines().take(steps);
 
-    for pos in positions.iter().take(steps) {
-        *grid.get_mut(*pos).unwrap() = '#';
+    for line in lines {
+        *grid.get_mut(parse_line(line)).unwrap() = '#';
     }
 
-    let path = calculate_path(
+    bfs_search(
         &grid,
         Position::new(0, 0),
         Position::new(grid.width() as i32 - 1, grid.height() as i32 - 1),
         |grid, _, pos| grid.get(pos) == Some(EMPTY),
     )
-    .unwrap();
-
-    for pos in path.iter() {
-        *grid.get_mut(*pos).unwrap() = 'O';
-    }
-
-    grid.print();
-
-    path.len() as u64 - 1
+    .unwrap() as _
 }
 
-fn solve2(input: &str, mut grid: Grid) -> u64 {
-    let positions = parse_input(input);
-
+fn try_steps(mut grid: Grid, positions: &[Position]) -> bool {
     for pos in positions.iter() {
         *grid.get_mut(*pos).unwrap() = '#';
-        let path = calculate_path(
-            &grid,
-            Position::new(0, 0),
-            Position::new(grid.width() as i32 - 1, grid.height() as i32 - 1),
-            |grid, _, pos| grid.get(pos) == Some(EMPTY),
-        );
+    }
+    let path = bfs_search(
+        &grid,
+        Position::new(0, 0),
+        Position::new(grid.width() as i32 - 1, grid.height() as i32 - 1),
+        |grid, _, pos| grid.get(pos) == Some(EMPTY),
+    );
 
-        if path.is_none() {
-            println!("pos: {pos:?}");
+    path.is_some()
+}
+
+fn solve2(input: &str, grid: Grid) -> String {
+    let positions = parse_input(input);
+
+    let mut min = 0;
+    let mut max = positions.len() - 1;
+
+    while min <= max {
+        let half = (max - min) / 2;
+        if half == 0 {
             break;
+        }
+        let middle = min + half;
+        if try_steps(grid.clone(), &positions[0..middle]) {
+            min += half;
+        } else {
+            max -= half;
         }
     }
 
-    0
+    let Position { x, y } = positions[min];
+    format!("{x},{y}")
 }
 
 const PUZZLE: &str = include_str!("./puzzle.txt");
@@ -89,6 +97,6 @@ mod tests {
     #[test]
     fn test2() {
         let grid = Grid::new(7, 7, EMPTY);
-        assert_eq!(solve2(EXAMPLE, grid), 0);
+        assert_eq!(solve2(EXAMPLE, grid), "6,1");
     }
 }

@@ -7,6 +7,7 @@ members = [
 ]
 
 [workspace.dependencies]
+astar = { path = "utils/astar" }
+bfs = { path = "utils/bfs" }
 grid = { path = "utils/grid" }
 utils = { path = "utils/utils" }
-astar = { path = "utils/astar" }
