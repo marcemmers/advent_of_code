@@ -59,6 +59,48 @@ pub fn greatest_common_divisor(first: u64, second: u64) -> u64 {
 /// # Example
 ///
 /// ```
+/// use utils::is_prime;
+///
+/// assert_eq!(is_prime(2), true);
+/// assert_eq!(is_prime(3), true);
+/// assert_eq!(is_prime(4), false);
+/// assert_eq!(is_prime(225), false);
+/// assert_eq!(is_prime(229), true);
+/// ```
+pub fn is_prime(mut n: u64) -> bool {
+    let mut count = 0;
+
+    while n.is_multiple_of(2) {
+        count += 1;
+        if count > 1 {
+            return false;
+        }
+        n /= 2;
+    }
+
+    let mut i = 3;
+    while i <= (n as f64).sqrt() as u64 {
+        while n.is_multiple_of(i) {
+            count += 1;
+            if count > 1 {
+                return false;
+            }
+            n /= i;
+        }
+        i += 2;
+    }
+
+    if n > 2 {
+        count += 1;
+    }
+    count == 1
+}
+
+/// Returns the prime factors of the input and returns a hashmap with the factors and their amounts
+///
+/// # Example
+///
+/// ```
 /// use utils::prime_factors;
 ///
 /// let factors = prime_factors(315);
