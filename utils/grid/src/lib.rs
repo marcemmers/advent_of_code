@@ -110,6 +110,20 @@ impl Distance {
     pub fn new(x: i32, y: i32) -> Self {
         Self { x, y }
     }
+
+    pub fn eight_directions() -> &'static [Self; 8] {
+        const DIRECTIONS: [Distance; 8] = [
+            Distance { x: -1, y: -1 },
+            Distance { x: 0, y: -1 },
+            Distance { x: 1, y: -1 },
+            Distance { x: -1, y: 0 },
+            Distance { x: 1, y: 0 },
+            Distance { x: -1, y: 1 },
+            Distance { x: 0, y: 1 },
+            Distance { x: 1, y: 1 },
+        ];
+        &DIRECTIONS
+    }
 }
 
 impl Add<Direction> for Position {
